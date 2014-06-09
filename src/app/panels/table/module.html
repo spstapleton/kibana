@@ -52,12 +52,24 @@
       padding: 10px;
       border: 1px solid #666;
     }
+    .table-scroll{
+      height: {{panel.height}};
+      overflow-y:auto;
+    }
+    .table-expand{
+      min-height:panel.height;
+      overflow-y:auto;
+    }
+    .table-infiniscroll{
+      height:panel.height;
+      overflow-y:auto;
+    }
   </style>
 
   <div class="table-container">
 
     <div bindonce ng-class="{'table-sidebar':panel.field_list}" ng-if="panel.field_list">
-      <div style="{{panel.overflow}}:{{panel.height||row.height}};overflow-y:auto">
+      <div style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-infiniscroll'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
 
         <strong>Fields <i class=" icon-chevron-sign-left pointer " ng-click="panel.field_list = !panel.field_list" bs-tooltip="'Hide field list'"></i></strong><p>
 
@@ -97,7 +109,8 @@
 
     <div ng-class="{'table-main':panel.field_list}" class="table-doc-table">
 
-      <div style="{{panel.overflow}}:{{panel.height||row.height}};overflow-y:auto">
+      <div class="{{panel.overflow}}" style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-infiniscroll'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
+      
         <div class="table-facet" ng-if="modalField">
           <h4>
             <button class="btn btn-mini btn-danger" ng-click="closeFacet();">close</button>

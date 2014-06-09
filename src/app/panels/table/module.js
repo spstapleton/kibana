@@ -75,7 +75,7 @@ function (angular, app, _, kbn, moment) {
       /** @scratch /panels/table/5
        * overflow:: The css overflow property. `min-height' (expand) or `auto' (scroll)
        */
-      overflow: 'min-height',
+      overflow: 'table-expand',
       /** @scratch /panels/table/5
        * fields:: the fields used a columns of the table, in an array.
        */
