@@ -133,9 +133,12 @@
             <i ng-click="panel.offset = 0" ng-show="panel.offset > 0" class='icon-circle-arrow-left pointer'></i>
             <i ng-click="panel.offset = (panel.offset - panel.size)" ng-show="panel.offset > 0" class='icon-arrow-left pointer'></i>
           </div>
-          <div class="span8" style="text-align:center">
+          <div ng-if="panel.overflow != 'table-infiniscroll'" class="span8" style="text-align:center">
             <strong>{{panel.offset}}</strong> to <strong>{{panel.offset + data.slice(panel.offset,panel.offset+panel.size).length}}</strong>
             <small> of {{data.length}} available for paging</small>
+          </div>
+          <div ng-if="panel.overflow == 'table-infiniscroll'" class="span8" style="text-align:center">
+            <strong>{{data.length}}</strong> items
           </div>
           <div class="span1" style="text-align:left">
             <i ng-click="panel.offset = (panel.offset + panel.size)" ng-show="data.length > panel.offset+panel.size" class='icon-arrow-right pointer'></i>
@@ -201,9 +204,13 @@
             <i ng-click="panel.offset = 0" ng-show="panel.offset > 0" class='icon-circle-arrow-left pointer'></i>
             <i ng-click="panel.offset = (panel.offset - panel.size)" ng-show="panel.offset > 0" class='icon-arrow-left pointer'></i>
           </div>
-          <div class="span4" style="text-align:center">
+          <div ng-if="panel.overflow !== 'table-infiniscroll'" class="span4" style="text-align:center">
             <strong>{{panel.offset}}</strong> to <strong>{{panel.offset + data.slice(panel.offset,panel.offset+panel.size).length}}</strong>
             <small> of {{data.length}} available for paging</small>
+          </div>
+          </div>
+          <div ng-if="panel.overflow == 'table-infiniscroll'" class="span8" style="text-align:center">
+            <strong>{{data.length}}</strong> items
           </div>
           <div class="span1" style="text-align:left">
             <i ng-click="panel.offset = (panel.offset + panel.size)" ng-show="data.length > panel.offset+panel.size" class='icon-arrow-right pointer'></i>
