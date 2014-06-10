@@ -5,24 +5,25 @@
       </div>
       <div class="editor-option">
         <h6>Overflow</h6>
-        <select class="input-small" ng-model="panel.overflow" ng-options="f.value as f.key for f in [{key:'scroll',value:'table-scroll'},{key:'expand',value:'table-expand'},{key:'infiniscroll',value:'table-infiniscroll'}]"></select>
+        <select class="input-small" ng-model="panel.overflow" ng-options="f.value as f.key for f in [{key:'scroll',value:'table-scroll'},{key:'expand',value:'table-expand'},{key:'no pagination',value:'table-nopagination'}]"></select>
       </div>
     </div>
 
-    <div class="section">
-      <div class="editor-option">
-        <h6>Per Page</h6>
+    <div class="section" >
+      <div class="editor-option"  >
+        <h6 ng-if="panel.overflow != 'table-nopagination'">Per Page</h6>
+         <h6 ng-if="panel.overflow == 'table-nopagination'">Max Items</h6>
         <input type="number" class="input-mini" ng-model="panel.size" ng-change="get_data()">
       </div>
-      <div class="editor-option">
+      <div class="editor-option" ng-if="panel.overflow != 'table-nopagination'">
         <h6>&nbsp;</h6>
         <center><i class='icon-remove'></i><center>
       </div>
-      <div class="editor-option">
+      <div class="editor-option" ng-if="panel.overflow != 'table-nopagination'">
         <h6>Page limit</h6>
         <input type="number" class="input-mini" ng-model="panel.pages" ng-change="get_data()">
       </div>
-      <div class="editor-option large">
+      <div class="editor-option large" ng-if="panel.overflow != 'table-nopagination'">
         <h6>Pageable</h6>
         <strong class="large">= {{panel.size * panel.pages}}</strong>
       </div>

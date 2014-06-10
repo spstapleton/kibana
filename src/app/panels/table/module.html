@@ -60,16 +60,16 @@
       min-height:panel.height;
       overflow-y:auto;
     }
-    .table-infiniscroll{
+    .table-nopagination{
       height:panel.height;
       overflow-y:auto;
     }
   </style>
 
-  <div class="table-container">
+  <div class="table-container" >
 
     <div bindonce ng-class="{'table-sidebar':panel.field_list}" ng-if="panel.field_list">
-      <div style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-infiniscroll'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
+      <div style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-nopagination'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
 
         <strong>Fields <i class=" icon-chevron-sign-left pointer " ng-click="panel.field_list = !panel.field_list" bs-tooltip="'Hide field list'"></i></strong><p>
 
@@ -107,11 +107,11 @@
       </div>
     </div>
 
-    <div ng-class="{'table-main':panel.field_list}" class="table-doc-table">
+    <div ng-class="{'table-main':panel.field_list}" class="table-doc-table" >
 
-      <div class="{{panel.overflow}}" style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-infiniscroll'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
+      <div class="{{panel.overflow}}" style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-nopagination'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;" >
       
-        <div class="table-facet" ng-if="modalField">
+        <div class="table-facet" ng-if="modalField"  >
           <h4>
             <button class="btn btn-mini btn-danger" ng-click="closeFacet();">close</button>
             {{adhocOpts.title}}
@@ -133,18 +133,18 @@
             <i ng-click="panel.offset = 0" ng-show="panel.offset > 0" class='icon-circle-arrow-left pointer'></i>
             <i ng-click="panel.offset = (panel.offset - panel.size)" ng-show="panel.offset > 0" class='icon-arrow-left pointer'></i>
           </div>
-          <div ng-if="panel.overflow != 'table-infiniscroll'" class="span8" style="text-align:center">
+          <div ng-if="panel.overflow != 'table-nopagination'" class="span8" style="text-align:center">
             <strong>{{panel.offset}}</strong> to <strong>{{panel.offset + data.slice(panel.offset,panel.offset+panel.size).length}}</strong>
             <small> of {{data.length}} available for paging</small>
           </div>
-          <div ng-if="panel.overflow == 'table-infiniscroll'" class="span8" style="text-align:center">
+          <div ng-if="panel.overflow == 'table-nopagination'" class="span8" style="text-align:center">
             <strong>{{data.length}}</strong> items
           </div>
           <div class="span1" style="text-align:left">
             <i ng-click="panel.offset = (panel.offset + panel.size)" ng-show="data.length > panel.offset+panel.size" class='icon-arrow-right pointer'></i>
           </div>
         </div>
-        <table class="table-hover table table-condensed" ng-style="panel.style">
+        <table class="table-hover table table-condensed" ng-style="panel.style" >
           <thead ng-show="panel.header">
             <th ng-show="panel.fields.length<1">_source (select columns from the list to the left)</th>
             <th style="white-space:nowrap" ng-repeat="field in panel.fields">
@@ -204,12 +204,12 @@
             <i ng-click="panel.offset = 0" ng-show="panel.offset > 0" class='icon-circle-arrow-left pointer'></i>
             <i ng-click="panel.offset = (panel.offset - panel.size)" ng-show="panel.offset > 0" class='icon-arrow-left pointer'></i>
           </div>
-          <div ng-if="panel.overflow !== 'table-infiniscroll'" class="span4" style="text-align:center">
+          <div ng-if="panel.overflow !== 'table-nopagination'" class="span4" style="text-align:center">
             <strong>{{panel.offset}}</strong> to <strong>{{panel.offset + data.slice(panel.offset,panel.offset+panel.size).length}}</strong>
             <small> of {{data.length}} available for paging</small>
           </div>
           </div>
-          <div ng-if="panel.overflow == 'table-infiniscroll'" class="span8" style="text-align:center">
+          <div ng-if="panel.overflow == 'table-nopagination'" class="span8" style="text-align:center">
             <strong>{{data.length}}</strong> items
           </div>
           <div class="span1" style="text-align:left">

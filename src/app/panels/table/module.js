@@ -146,7 +146,6 @@ function (angular, app, _, kbn, moment) {
       _.each($scope.panel.fields,function(field) {
         $scope.columns[field] = true;
       });
-
       $scope.Math = Math;
       $scope.identity = angular.identity;
       $scope.$on('refresh',function(){$scope.get_data();});
@@ -408,9 +407,12 @@ function (angular, app, _, kbn, moment) {
             $scope.data.reverse();
           }
 
-          // Keep only what we need for the set
+          // Keep only what we need for the set, unless using infiniscroll
+          if ($scope.panel.overflow === 'table-nopagination'){     
+            $scope.panel.pages = 1;    
+          }
           $scope.data = $scope.data.slice(0,$scope.panel.size * $scope.panel.pages);
-
+          
         } else {
           return;
         }
@@ -442,6 +444,11 @@ function (angular, app, _, kbn, moment) {
     };
 
     $scope.close_edit = function() {
+      if ($scope.panel.overflow === 'table-nopagination'){
+        $scope.panel.pages = 1;
+        $scope.get_data();
+
+      }
       if($scope.refresh) {
         $scope.get_data();
       }
@@ -465,10 +472,13 @@ function (angular, app, _, kbn, moment) {
       }
       return obj;
     };
+    
+      // $scope.loadMore();
+  
 
 
-  });
-
+});
+ 
   // This also escapes some xml sequences
   module.filter('tableHighlight', function() {
     return function(text) {
