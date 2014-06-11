@@ -447,7 +447,6 @@ function (angular, app, _, kbn, moment) {
       if ($scope.panel.overflow === 'table-nopagination'){
         $scope.panel.pages = 1;
         $scope.get_data();
-
       }
       if($scope.refresh) {
         $scope.get_data();
@@ -472,8 +471,24 @@ function (angular, app, _, kbn, moment) {
       }
       return obj;
     };
-    
-      // $scope.loadMore();
+    var eventText='';
+    $scope.findNext = function(searchInput) {
+      var searchText = '';
+      if(searchInput){
+        searchText = searchInput;
+      } else {
+        searchText = document.getElementById('findTextbox').value;
+      }
+      if (eventText.length===0){
+        eventText = document.getElementById('eventTable').innerHTML;
+      }
+      var regex = new RegExp(searchText, 'ig');
+      var boldText = "<div style=\"background-color: blue; display: inline;\">" + searchText + "</div>";
+      var replaced = eventText.replace(regex, boldText);
+      document.getElementById("eventTable").innerHTML = replaced;
+      find(searchText);
+
+    };
   
 
 
