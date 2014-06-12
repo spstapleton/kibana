@@ -12,6 +12,7 @@ define([
   'angular-strap',
   'angular-dragdrop',
   'angular-cookies',
+  'angular-scroll',
   'extend-jquery',
   'bindonce',
 ],

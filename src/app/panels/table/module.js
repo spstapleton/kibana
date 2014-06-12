@@ -26,7 +26,7 @@ function (angular, app, _, kbn, moment) {
   var module = angular.module('kibana.panels.table', []);
   app.useModule(module);
 
-  module.controller('table', function($rootScope, $scope, $modal, $q, $compile, $timeout,
+  module.controller('table', function($rootScope, $scope, $document, $modal, $q, $compile, $timeout,
     fields, querySrv, dashboard, filterSrv) {
     $scope.panelMeta = {
       modals : [
@@ -483,11 +483,16 @@ function (angular, app, _, kbn, moment) {
         eventText = document.getElementById('eventTable').innerHTML;
       }
       var regex = new RegExp(searchText, 'ig');
-      var boldText = "<div style=\"background-color: blue; display: inline;\">" + searchText + "</div>";
+      var boldText = "<div id='findResult' style=\"background-color: blue; display: inline;\">" + searchText + "</div>";
       var replaced = eventText.replace(regex, boldText);
       document.getElementById("eventTable").innerHTML = replaced;
-      find(searchText);
-
+      // find(searchText);
+    //   var f = angular.element(document.getElementById('findResult'));
+    //   var g = angular.element(document.getElementById('eventTable'));
+    //   $scope.tof= function(){
+    //   g.scrollTo(f);
+    // };
+    // $scope.tof();
     };
   
 
