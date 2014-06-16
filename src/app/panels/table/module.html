@@ -52,6 +52,13 @@
       padding: 10px;
       border: 1px solid #666;
     }
+
+    .table-event-highlight td {
+        background-color: rgba(150,150,50,.5) !important;
+    }
+    .table-event-highlight:hover td {
+        background-color: rgba(150,150,50,.25) !important;
+    }
   </style>
 
   <div class="table-container">
@@ -153,13 +160,39 @@
             </tr>
             <tr ng-if="event.kibana.details">
               <td colspan={{panel.fields.length}} ng-switch="event.kibana.view">
-                <span>
-                  View:
-                  <a class="link" ng-class="{'strong':event.kibana.view == 'table'}" ng-click="event.kibana.view = 'table'">Table</a> /
-                  <a class="link" ng-class="{'strong':event.kibana.view == 'json'}" ng-click="event.kibana.view = 'json'">JSON</a> /
-                  <a class="link" ng-class="{'strong':event.kibana.view == 'raw'}" ng-click="event.kibana.view = 'raw'">Raw</a>
-                  <i class="link pull-right icon-chevron-up" ng-click="toggle_details(event)"></i>
-                </span>
+                <div>
+                  <span>
+                    View:
+                    <a class="link" ng-class="{'strong':event.kibana.view == 'table'}" ng-click="event.kibana.view = 'table'">Table</a> /
+                    <a class="link" ng-class="{'strong':event.kibana.view == 'json'}" ng-click="event.kibana.view = 'json'">JSON</a> /
+                    <a class="link" ng-class="{'strong':event.kibana.view == 'raw'}" ng-click="event.kibana.view = 'raw'">Raw</a> /
+                    <a class="link" ng-class="{'strong':event.kibana.view == 'context'}" ng-click="event.kibana.view = 'context';getContext(event);">Context</a>
+                    <i class="link pull-right icon-chevron-up" ng-click="toggle_details(event)"></i>
+                    <a class="link pull-right" ng-switch-when="context" ng-click="showAdvancedContextMenu(event)">Show advanced context options</a>
+                  </span>
+                </div>
+                <div>
+                    <div ng-switch-when="context">
+                  <div ng-show="event.kibana.showAdvancedContext" class="clearfix">
+                    <div class="pull-left">
+                        <span>Match Filters:</span>
+                        <ul><li ng-repeat="(key, value) in event.kibana._source track by $index">
+                            <input type="checkbox" ng-click="toggleContextFilter(event, 'match', key)"
+                                   ng-checked="event.kibana['contextFilters']['match'][key]"/><span>&nbsp;{{key}}</span>
+                        </li></ul>
+                    </div>
+                      <div class="pull-left" style="margin-left: 10px;">
+                          <span>Sort Filter:&nbsp;</span>
+                          <span><input type="radio" ng-model="event.kibana['contextFilters']['sortDirection']" value="desc"/> Descending</span>
+                          <span><input type="radio" ng-model="event.kibana['contextFilters']['sortDirection']" value="asc"/> Ascending</span>
+                          <ul><li ng-repeat="(key, value) in event.kibana._source track by $index">
+                              <input type="radio" ng-model="event.kibana['contextFilters']['sort']" value="{{key}}"/><span>&nbsp;{{key}}</span>
+                          </li></ul>
+                      </div>
+                  </div>
+                    </div>
+                </div>
+
                 <table class='table table-bordered table-condensed table-details' ng-switch-when="table">
                   <thead>
                     <th class="table-details-field">Field</th>
@@ -179,6 +212,37 @@
                 </table>
                 <pre style="white-space:pre-wrap;word-wrap:break-word"  bo-html="without_kibana(event)|tableJson:2" ng-switch-when="json"></pre>
                 <pre bo-html="without_kibana(event)|tableJson:1" ng-switch-when="raw"></pre>
+                <div ng-switch-when="context">
+                    <div ng-show="!!event.kibana.contextLoaded">
+                        <h2>Context View!!!!!</h2>
+                        <table class="table-hover table table-condensed" style="border: 1px solid #666" ng-style="panel.style">
+                            <tbody>
+                                <tr ng-repeat="msg in event.kibana.postContext" ng-class-odd="'odd'">
+                                    <td ng-if="panel.fields.length<1" bo-text="msg._source|stringify|tableTruncate:panel.trimFactor:1"></td>
+                                    <td ng-show="panel.fields.length>0" ng-repeat="field in panel.fields">
+                                        <span ng-if="!panel.localTime || panel.timeField != field" bo-html="(msg.kibana.highlight[field]||msg.kibana._source[field]) |tableHighlight | tableTruncate:panel.trimFactor:panel.fields.length" class="table-field-value"></span>
+                                        <span ng-if="panel.localTime && panel.timeField == field" bo-html="msg.sort[1]|tableLocalTime:event" class="table-field-value"></span>
+                                    </td>
+                                </tr>
+                                <tr class="table-event-highlight">
+                                    <td ng-if="panel.fields.length<1" bo-text="event._source|stringify|tableTruncate:panel.trimFactor:1"></td>
+                                    <td ng-show="panel.fields.length>0" ng-repeat="field in panel.fields">
+                                        <span ng-if="!panel.localTime || panel.timeField != field" bo-html="(event.kibana.highlight[field]||event.kibana._source[field]) |tableHighlight | tableTruncate:panel.trimFactor:panel.fields.length" class="table-field-value"></span>
+                                        <span ng-if="panel.localTime && panel.timeField == field" bo-html="event.sort[1]|tableLocalTime:event" class="table-field-value"></span>
+                                    </td>
+                                </tr>
+                                <tr ng-repeat="msg in event.kibana.preContext" ng-class-odd="'odd'">
+                                    <td ng-if="panel.fields.length<1" bo-text="msg._source|stringify|tableTruncate:panel.trimFactor:1"></td>
+                                    <td ng-show="panel.fields.length>0" ng-repeat="field in panel.fields">
+                                        <span ng-if="!panel.localTime || panel.timeField != field" bo-html="(msg.kibana.highlight[field]||msg.kibana._source[field]) |tableHighlight | tableTruncate:panel.trimFactor:panel.fields.length" class="table-field-value"></span>
+                                        <span ng-if="panel.localTime && panel.timeField == field" bo-html="msg.sort[1]|tableLocalTime:event" class="table-field-value"></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div ng-show="!event.kibana.contextLoaded"><h2>Loading Context</h2></div>
+                </div>
               </td>
             </tr>
           </tbody>

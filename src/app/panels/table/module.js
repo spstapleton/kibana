@@ -333,6 +333,9 @@ function (angular, app, _, kbn, moment) {
 
       boolQuery = $scope.ejs.BoolQuery();
       _.each(queries,function(q) {
+          console.log(2222222)
+          console.log(q)
+          console.log(2222222)
         boolQuery = boolQuery.should(querySrv.toEjsObj(q));
       });
 
@@ -465,8 +468,142 @@ function (angular, app, _, kbn, moment) {
       }
       return obj;
     };
+    $scope.showAdvancedContextMenu = function(event){
+        console.log('clicked')
+        event.kibana['showAdvancedContext'] = !event.kibana['showAdvancedContext'];
+        console.log(event.kibana['showAdvancedContext'])
+    }
+    $scope.toggleContextFilter = function(message, filter, key, singleKeyFilter){
+        message.kibana['contextFilters'] = message.kibana['contextFilters'] || {};
+        message.kibana['contextFilters'][filter] = message.kibana['contextFilters'][filter] || {};
+        if(singleKeyFilter){
+            for(var k in message.kibana['contextFilters'][filter]){
+                if(k === key) continue;
+                message.kibana['contextFilters'][filter][k] = false;
+            }
+        }
+        console.log(message.kibana['contextFilters'][filter]);
+        message.kibana['contextFilters'][filter][key] = !message.kibana['contextFilters'][filter][key];
+    }
+    $scope.getContext = function(message, forceRefresh) {
+        message.kibana['contextFilters'] = message.kibana['contextFilters'] || {};
+        if(!message.kibana['contextFilters']['sort']){
+            message.kibana['contextFilters']['sort'] = '';
+            if(message._source['@timestamp']){
+                message.kibana['contextFilters']['sort'] = '@timestamp';
+            }
+        }
+        if(!message.kibana['contextFilters']['sortDirection']){
+            message.kibana['contextFilters']['sortDirection'] = 'asc';
+        }
+        if(!message.kibana['contextFilters']['match']){
+            message.kibana['contextFilters']['match'] = {}
+            if(message._source['context_filter']){
+                message.kibana['contextFilters']['match']['context_filter'] = true;
+            }
+        }
+        forceRefresh = forceRefresh || false;
+        if(forceRefresh){
+            message.kibana.contextLoaded = false;
+        }
+        //console.log(message);
+        if(!message.kibana.contextLoaded) {
+            var preContext = 10;
+            var postContext = 10;
+            $timeout( function() {
+                if(!!message.kibana['contextFilters'] && !!message.kibana['contextFilters']['sort'] ) {
+                    if(message.kibana['contextFilters']['sort'] === '')
+                    var messageTime = new Date( message._source['@timestamp'] );
+                    var toDate = new Date( messageTime + 60000 );
+                    var fromDate = new Date( messageTime - 60000 );
+                    console.log( toDate )
+                    console.log( fromDate )
+                    var rangeQuery = ejs.RangeQuery( '@timestamp' )
+                    rangeQuery.to( toDate );
+                    rangeQuery.from( fromDate );
+                    var request = $scope.ejs.Request().indices( message._index )
+                    var mq = ejs.BoolQuery().must( ejs.TermQuery( 'context_filter', message._source['context_filter'] ) );
+                    console.log( mq )
+                    console.log( mq.toString() )
+                    var bq = ejs.BoolQuery().must( mq );
+                    //request = request.query(bq);
 
+                    request = request.filter( ejs.AndFilter( [
+                        ejs.QueryFilter( mq ),
+                        ejs.QueryFilter( rangeQuery )
+                    ] ) );
+                    console.log( request.toString() )
+                    request.doSearch().then( function( results ) {
+                        console.log( 'res' )
+                        console.log( results )
+                        console.log( 'end res' )
+                    } )
+                } else {
+                    $scope.showAdvancedContextMenu( message );
+                }
+//            require('elasticsearch').client.search({
+//                index: message._index,
+//                body: ejs.Request()
+//                    .query(rangeQuery)
+//            },
+//                function(error, response){
+//                    console.log('error:');
+//                    console.log(error);
+//                    console.log('response:');
+//                    console.log(response);
+//                }
+//            );
+//            console.log(ejs.client)
+//            ejs.client.get('/',newQuery,function(){console.log(arguments)}, function(){console.log('error')} ).then(function(){console.log('then:');console.log(arguments)})
+//            $scope.ejs.client.get('/' + dashboard.indices + '/_mapping/field/' + newQuery.field,
+//                undefined, undefined, function(data, status) {
+//                    console.log(1111111111)
+//                    console.log(data)
+//                    console.log(status);
+//                    console.log(1111111111)
+//
+//                });
 
+//            console.log('########NEWQUERY########')
+//            console.log(newQuery);
+//            console.log(querySrv.list())
+//            console.log('@@@@@@@@@@@')
+//            var res = ejs.QueryStringQuery(newQuery.field+":"+newQuery.query)
+//            console.log(res)
+
+//            console.log('@@@@@@@@@@@')
+
+//            querySrv.resolve().then(function(){
+//                console.log('!!!!!!')
+//                console.log(arguments);
+//                console.log('!!!!!!')
+//            });
+//            console.log('/########NEWQUERY########')
+                //querySrv.set(NEW QUERY)
+                var context = _.filter( $scope.data, function( item ) {
+                    return item._source.path === message._source.path && item._source.host === message._source.host;
+                } );
+                var messageIndex = context.indexOf( message );
+                var preContextEndIndex = messageIndex + preContext;
+                if( preContextEndIndex >= context.length ) {
+                    preContextEndIndex = context.length - 1
+                }
+                var postContextStartIndex = messageIndex - postContext;
+                if( postContextStartIndex < 0 ) {
+                    postContextStartIndex = 0;
+                }
+//            console.log('postContextStartIndex: '+postContextStartIndex + ', message index: ' + messageIndex + ', preContextEndIndex: ' + preContextEndIndex)
+                message.kibana.postContext = context.slice( postContextStartIndex, messageIndex );
+                message.kibana.preContext = context.slice( messageIndex + 1, preContextEndIndex )
+                message.kibana.contextLoaded = true;
+//            console.log(message.kibana.postContext)
+//            console.log(message)
+//            console.log(message.kibana.preContext)
+
+            }, 10 );
+        }
+
+    }
   });
 
   // This also escapes some xml sequences
