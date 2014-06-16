@@ -72,7 +72,7 @@
       <div style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-nopagination'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
         <i class=" icon-chevron-sign-left pointer " ng-click="panel.field_list = !panel.field_list" bs-tooltip="'Hide field list'"></i><br><br>
       <strong>Find </strong><p>
-        <div><input type="text" id='findTextbox' class="input-medium" placeholder="Type to search text..." ng-model="fieldFind" >
+        <div><input type="text" id='findTextbox' class="input-medium" placeholder="Type to search text..." ng-init="setFind()" >
         <i class=" icon-chevron-sign-right pointer "  bs-tooltip="'Search'" ng-click="findNext()"></i> 
         </div>
 

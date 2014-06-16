@@ -12,32 +12,32 @@
  * defined columns and offers several interactions, such as performing adhoc terms aggregations.
  *
  */
-define([
+ define([
   'angular',
   'app',
   'lodash',
   'kbn',
   'moment',
   'jsonpath'
-],
-function (angular, app, _, kbn, moment) {
-  'use strict';
+  ],
+  function (angular, app, _, kbn, moment) {
+    'use strict';
 
-  var module = angular.module('kibana.panels.table', []);
-  app.useModule(module);
+    var module = angular.module('kibana.panels.table', []);
+    app.useModule(module);
 
-  module.controller('table', function($rootScope, $scope, $document, $modal, $q, $compile, $timeout,
-    fields, querySrv, dashboard, filterSrv) {
-    $scope.panelMeta = {
-      modals : [
+    module.controller('table', function($rootScope, $scope, $document, $modal, $q, $compile, $timeout,
+      fields, querySrv, dashboard, filterSrv) {
+      $scope.panelMeta = {
+        modals : [
         {
           description: "Inspect",
           icon: "icon-info-sign",
           partial: "app/partials/inspector.html",
           show: $scope.panel.spyable
         }
-      ],
-      editorTabs : [
+        ],
+        editorTabs : [
         {
           title:'Paging',
           src: 'app/panels/table/pagination.html'
@@ -46,11 +46,11 @@ function (angular, app, _, kbn, moment) {
           title:'Queries',
           src: 'app/partials/querySelect.html'
         }
-      ],
-      status: "Stable",
-      description: "A paginated table of records matching your query or queries. Click on a row to "+
+        ],
+        status: "Stable",
+        description: "A paginated table of records matching your query or queries. Click on a row to "+
         "expand it and review all of the fields associated with that document. <p>"
-    };
+      };
 
     // Set and populate defaults
     var _d = {
@@ -67,64 +67,64 @@ function (angular, app, _, kbn, moment) {
       /** @scratch /panels/table/5
        * offset:: The current page
        */
-      offset  : 0,
+       offset  : 0,
       /** @scratch /panels/table/5
        * sort:: An array describing the sort order of the table. For example [`@timestamp',`desc']
        */
-      sort    : ['_score','desc'],
+       sort    : ['_score','desc'],
       /** @scratch /panels/table/5
        * overflow:: The css overflow property. `min-height' (expand) or `auto' (scroll)
        */
-      overflow: 'table-expand',
+       overflow: 'table-expand',
       /** @scratch /panels/table/5
        * fields:: the fields used a columns of the table, in an array.
        */
-      fields  : [],
+       fields  : [],
       /** @scratch /panels/table/5
        * highlight:: The fields on which to highlight, in an array
        */
-      highlight : [],
+       highlight : [],
       /** @scratch /panels/table/5
        * sortable:: Set sortable to false to disable sorting
        */
-      sortable: true,
+       sortable: true,
       /** @scratch /panels/table/5
        * header:: Set to false to hide the table column names
        */
-      header  : true,
+       header  : true,
       /** @scratch /panels/table/5
        * paging:: Set to false to hide the paging controls of the table
        */
-      paging  : true,
+       paging  : true,
       /** @scratch /panels/table/5
        * field_list:: Set to false to hide the list of fields. The user will be able to expand it,
        * but it will be hidden by default
        */
-      field_list: true,
+       field_list: true,
       /** @scratch /panels/table/5
        * all_fields:: Set to true to show all fields in the mapping, not just the current fields in
        * the table.
        */
-      all_fields: false,
+       all_fields: false,
       /** @scratch /panels/table/5
        * trimFactor:: The trim factor is the length at which to truncate fields takinging into
        * consideration the number of columns in the table. For example, a trimFactor of 100, with 5
        * columns in the table, would trim each column at 20 character. The entirety of the field is
        * still available in the expanded view of the event.
        */
-      trimFactor: 300,
+       trimFactor: 300,
       /** @scratch /panels/table/5
        * localTime:: Set to true to adjust the timeField to the browser's local time
        */
-      localTime: false,
+       localTime: false,
       /** @scratch /panels/table/5
        * timeField:: If localTime is set to true, this field will be adjusted to the browsers local time
        */
-      timeField: '@timestamp',
+       timeField: '@timestamp',
       /** @scratch /panels/table/5
        * spyable:: Set to false to disable the inspect icon
        */
-      spyable : true,
+       spyable : true,
       /** @scratch /panels/table/5
        *
        * ==== Queries
@@ -132,7 +132,7 @@ function (angular, app, _, kbn, moment) {
        * queries.mode::: Of the queries available, which to use. Options: +all, pinned, unpinned, selected+
        * queries.ids::: In +selected+ mode, which query ids are selected.
        */
-      queries     : {
+       queries     : {
         mode        : 'all',
         ids         : []
       },
@@ -152,6 +152,7 @@ function (angular, app, _, kbn, moment) {
 
       $scope.fields = fields;
       $scope.get_data();
+
     };
 
     // Create a percent function for the view
@@ -218,9 +219,9 @@ function (angular, app, _, kbn, moment) {
 
       var nodeInfo = $scope.ejs.client.get('/' + dashboard.indices + '/_mapping/field/' + field,
         undefined, undefined, function(data, status) {
-        console.log(status);
-        return;
-      });
+          console.log(status);
+          return;
+        });
 
       return nodeInfo.then(function(p) {
         var types = _.uniq(jsonPath(p, '*.*.*.*.mapping.*.type'));
@@ -251,6 +252,7 @@ function (angular, app, _, kbn, moment) {
     };
 
     $scope.toggle_field = function(field) {
+      // $scope.resetFind();
       if (_.indexOf($scope.panel.fields,field) > -1) {
         $scope.panel.fields = _.without($scope.panel.fields,field);
         delete $scope.columns[field];
@@ -300,11 +302,11 @@ function (angular, app, _, kbn, moment) {
 
     $scope.get_data = function(segment,query_id) {
       var
-        _segment,
-        request,
-        boolQuery,
-        queries,
-        sort;
+      _segment,
+      request,
+      boolQuery,
+      queries,
+      sort;
 
       $scope.panel.error =  false;
 
@@ -339,15 +341,15 @@ function (angular, app, _, kbn, moment) {
         $scope.ejs.FilteredQuery(
           boolQuery,
           filterSrv.getBoolFilter(filterSrv.ids())
-        ))
-        .highlight(
-          $scope.ejs.Highlight($scope.panel.highlight)
+          ))
+      .highlight(
+        $scope.ejs.Highlight($scope.panel.highlight)
           .fragmentSize(2147483647) // Max size of a 32bit unsigned int
           .preTags('@start-highlight@')
           .postTags('@end-highlight@')
-        )
-        .size($scope.panel.size*$scope.panel.pages)
-        .sort(sort);
+          )
+      .size($scope.panel.size*$scope.panel.pages)
+      .sort(sort);
 
       $scope.populate_modal(request);
 
@@ -375,8 +377,8 @@ function (angular, app, _, kbn, moment) {
           // This is exceptionally expensive, especially on events with a large number of fields
           $scope.data = $scope.data.concat(_.map(results.hits.hits, function(hit) {
             var
-              _h = _.clone(hit),
-              _p = _.omit(hit,'_source','sort','_score');
+            _h = _.clone(hit),
+            _p = _.omit(hit,'_source','sort','_score');
 
             // _source is kind of a lie here, never display it, only select values from it
             _h.kibana = {
@@ -424,92 +426,103 @@ function (angular, app, _, kbn, moment) {
           !((_.contains(filterSrv.timeField(),$scope.panel.sort[0])) && $scope.panel.sort[1] === 'desc')) &&
           _segment+1 < dashboard.indices.length) {
           $scope.get_data(_segment+1,$scope.query_id);
-        }
-
-      });
-    };
-
-    $scope.populate_modal = function(request) {
-      $scope.inspector = angular.toJson(JSON.parse(request.toString()),true);
-    };
-
-    $scope.without_kibana = function (row) {
-      var _c = _.clone(row);
-      delete _c.kibana;
-      return _c;
-    };
-
-    $scope.set_refresh = function (state) {
-      $scope.refresh = state;
-    };
-
-    $scope.close_edit = function() {
-      if ($scope.panel.overflow === 'table-nopagination'){
-        $scope.panel.pages = 1;
-        $scope.get_data();
       }
-      if($scope.refresh) {
-        $scope.get_data();
-      }
-      $scope.columns = [];
-      _.each($scope.panel.fields,function(field) {
-        $scope.columns[field] = true;
-      });
-      $scope.refresh =  false;
-    };
 
-    $scope.locate = function(obj, path) {
-      path = path.split('.');
-      var arrayPattern = /(.+)\[(\d+)\]/;
-      for (var i = 0; i < path.length; i++) {
-        var match = arrayPattern.exec(path[i]);
-        if (match) {
-          obj = obj[match[1]][parseInt(match[2],10)];
-        } else {
-          obj = obj[path[i]];
-        }
-      }
-      return obj;
-    };
-    var eventText='';
-    $scope.findNext = function(searchInput) {
-      var searchText = '';
-      if(searchInput){
-        searchText = searchInput;
-      } else {
-        searchText = document.getElementById('findTextbox').value;
-      }
-      if (eventText.length===0){
-        eventText = document.getElementById('eventTable').innerHTML;
-      }
-      var regex = new RegExp(searchText, 'ig');
-      var boldText = "<div id='findResult' style=\"background-color: blue; display: inline;\">" + searchText + "</div>";
-      var replaced = eventText.replace(regex, boldText);
-      document.getElementById("eventTable").innerHTML = replaced;
-      // find(searchText);
+    });
+};
+
+$scope.populate_modal = function(request) {
+  $scope.inspector = angular.toJson(JSON.parse(request.toString()),true);
+};
+
+$scope.without_kibana = function (row) {
+  var _c = _.clone(row);
+  delete _c.kibana;
+  return _c;
+};
+
+$scope.set_refresh = function (state) {
+  $scope.refresh = state;
+};
+
+$scope.close_edit = function() {
+  if ($scope.panel.overflow === 'table-nopagination'){
+    $scope.panel.pages = 1;
+    $scope.get_data();
+  }
+  if($scope.refresh) {
+    $scope.get_data();
+  }
+  $scope.columns = [];
+  _.each($scope.panel.fields,function(field) {
+    $scope.columns[field] = true;
+  });
+  $scope.refresh =  false;
+};
+
+$scope.locate = function(obj, path) {
+  path = path.split('.');
+  var arrayPattern = /(.+)\[(\d+)\]/;
+  for (var i = 0; i < path.length; i++) {
+    var match = arrayPattern.exec(path[i]);
+    if (match) {
+      obj = obj[match[1]][parseInt(match[2],10)];
+    } else {
+      obj = obj[path[i]];
+    }
+  }
+  return obj;
+};
+var eventText='';
+$scope.findNext = function() {
+  var searchText = document.getElementById('findTextbox').value;
+  if (eventText.length===0){
+    eventText = document.getElementById('eventTable').innerHTML;
+  }
+  if (searchText.length === 0){document.getElementById("eventTable").innerHTML = eventText;} else{
+    var regex = new RegExp(searchText, 'ig');
+    var boldText = "<div id='findResult' style=\"background-color: blue; display: inline;\">" + searchText + "</div>";
+    var replaced = eventText.replace(regex, boldText);
+    document.getElementById("eventTable").innerHTML = replaced;  
+  }
+    // find(searchText);
     //   var f = angular.element(document.getElementById('findResult'));
     //   var g = angular.element(document.getElementById('eventTable'));
     //   $scope.tof= function(){
     //   g.scrollTo(f);
     // };
     // $scope.tof();
-    };
+  };
+  $scope.resetFind = function() {
+    
+    document.getElementById('findTextbox').value = '';
+    document.getElementById("eventTable").innerHTML = eventText;
+  
+  };
+  $scope.setFind = function(){
+    document.getElementById('findTextbox').addEventListener('keypress',function(key){
+      var code = key.which || key.keyCode;
+      if (code === 13){
+        $scope.findNext();
+      }
+    });
+  };
   
 
 
 });
- 
+
   // This also escapes some xml sequences
   module.filter('tableHighlight', function() {
     return function(text) {
       if (!_.isUndefined(text) && !_.isNull(text) && text.toString().length > 0) {
         return text.toString().
-          replace(/&/g, '&amp;').
-          replace(/</g, '&lt;').
-          replace(/>/g, '&gt;').
-          replace(/\r?\n/g, '<br/>').
-          replace(/@start-highlight@/g, '<code class="highlight">').
-          replace(/@end-highlight@/g, '</code>');
+        replace(/&/g, '&amp;').
+        replace(/</g, '&lt;').
+        replace(/>/g, '&gt;').
+        replace(/\r?\n/g, '<br/>').
+        replace(/@start-highlight@/g, '<code class="highlight">').
+        replace(/@end-highlight@/g, '</code>');
       }
       return '';
     };
@@ -564,3 +577,4 @@ function (angular, app, _, kbn, moment) {
   });
 
 });
+
