@@ -64,6 +64,15 @@
       height:panel.height;
       overflow-y:auto;
     }
+    #findTextbox{
+      padding-right: 30px;
+      margin-right:-30px;
+      margin-top:6px;
+      width:125px;
+    }
+    .findResult{
+      background-color: blue; display: inline;
+    }
   </style>
 
   <div class="table-container" >
@@ -72,8 +81,8 @@
       <div style="{{panel.overflow == 'table-scroll' || panel.overflow == 'table-nopagination'? 'height:'+row.height : 'min-height:'+row.height}};overflow-y:auto;">
         <i class=" icon-chevron-sign-left pointer " ng-click="panel.field_list = !panel.field_list" bs-tooltip="'Hide field list'"></i><br><br>
       <strong>Find </strong><p>
-        <div><input type="text" id='findTextbox' class="input-medium" placeholder="Type to search text..." ng-init="setFind()" >
-        <i class=" icon-chevron-sign-right pointer "  bs-tooltip="'Search'" ng-click="findNext()"></i> 
+        <div><input type="text" id='findTextbox' class="input-medium" placeholder="Type to find..." ng-init="setFind()" >
+        <i class=" icon-search pointer "  bs-tooltip="'Search'" ng-click="findNext()"></i> 
         </div>
 
         <strong>Fields</strong><p>

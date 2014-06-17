@@ -473,41 +473,30 @@ $scope.locate = function(obj, path) {
   }
   return obj;
 };
-var eventText='';
+
 $scope.findNext = function() {
-  var searchText = document.getElementById('findTextbox').value;
-  if (eventText.length===0){
-    eventText = document.getElementById('eventTable').innerHTML;
-  }
-  if (searchText.length === 0){document.getElementById("eventTable").innerHTML = eventText;} else{
-    var regex = new RegExp(searchText, 'ig');
-    var boldText = "<div id='findResult' style=\"background-color: blue; display: inline;\">" + searchText + "</div>";
-    var replaced = eventText.replace(regex, boldText);
-    document.getElementById("eventTable").innerHTML = replaced;  
-  }
-    // find(searchText);
-    //   var f = angular.element(document.getElementById('findResult'));
-    //   var g = angular.element(document.getElementById('eventTable'));
-    //   $scope.tof= function(){
-    //   g.scrollTo(f);
-    // };
-    // $scope.tof();
-  };
-  $scope.resetFind = function() {
-    
-    document.getElementById('findTextbox').value = '';
-    document.getElementById("eventTable").innerHTML = eventText;
-  
-  };
-  $scope.setFind = function(){
-    document.getElementById('findTextbox').addEventListener('keypress',function(key){
-      var code = key.which || key.keyCode;
-      if (code === 13){
-        $scope.findNext();
-      }
-    });
-  };
-  
+  $scope.resetFind();
+  var searchText = document.getElementById("findTextbox").value;
+  $("#eventTable .ng-scope").each(function(){
+    $(this).replaceText(new RegExp(searchText, "ig"),"<span class='findResult'>"+searchText+"</span>");
+  });
+};
+
+$scope.resetFind = function() {
+  $("#eventTable .findResult").each(function(){
+    $(this).removeClass("findResult");
+  });
+};
+
+$scope.setFind = function(){
+  document.getElementById("findTextbox").addEventListener("keypress",function(key){
+    var code = key.which || key.keyCode;
+    if (code === 13){
+      $scope.findNext();
+    }
+  });
+};
+
 
 
 });
@@ -577,4 +566,26 @@ $scope.findNext = function() {
   });
 
 });
-
+$.fn.replaceText = function( search, replace, text_only ) {
+return this.each(function(){
+        var node = this.firstChild,
+        val, new_val, remove = [];
+        if ( node ) {
+            do {
+              if ( node.nodeType === 3 ) {
+                val = node.nodeValue;
+                new_val = val.replace( search, replace );
+                if ( new_val !== val ) {
+                  if ( !text_only && /</.test( new_val ) ) {
+                    $(node).before( new_val );
+                    remove.push( node );
+                  } else {
+                    node.nodeValue = new_val;
+                  }
+                }
+              }
+            } while ( node = node.nextSibling );
+        }
+        remove.length && $(remove).remove();
+    });
+};
