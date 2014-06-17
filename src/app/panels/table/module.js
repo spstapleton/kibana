@@ -387,8 +387,8 @@ function (angular, app, _, kbn, moment) {
 
             // Kind of cheating with the _.map here, but this is faster than kbn.get_all_fields
             $scope.current_fields = $scope.current_fields.concat(_.keys(_h.kibana._source));
-
             return _h;
+
           }));
 
           $scope.current_fields = _.uniq($scope.current_fields);
