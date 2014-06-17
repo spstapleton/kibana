@@ -512,27 +512,33 @@ function (angular, app, _, kbn, moment) {
             var postContext = 10;
             $timeout( function() {
                 if(!!message.kibana['contextFilters'] && !!message.kibana['contextFilters']['sort'] ) {
-                    if(message.kibana['contextFilters']['sort'] === '')
-                    var messageTime = new Date( message._source['@timestamp'] );
-                    var toDate = new Date( messageTime + 60000 );
-                    var fromDate = new Date( messageTime - 60000 );
-                    console.log( toDate )
-                    console.log( fromDate )
-                    var rangeQuery = ejs.RangeQuery( '@timestamp' )
-                    rangeQuery.to( toDate );
-                    rangeQuery.from( fromDate );
-                    var request = $scope.ejs.Request().indices( message._index )
-                    var mq = ejs.BoolQuery().must( ejs.TermQuery( 'context_filter', message._source['context_filter'] ) );
-                    console.log( mq )
-                    console.log( mq.toString() )
-                    var bq = ejs.BoolQuery().must( mq );
-                    //request = request.query(bq);
+                    var request = $scope.ejs.Request().indices( message._index );
+                    var andFilters = [];
+                    if(message.kibana['contextFilters']['sort'] === '@timestamp'){
+                        var messageTime = new Date( message._source['@timestamp'] );
+                        var toDate = new Date( messageTime );
+                        toDate.setMinutes(messageTime.getMinutes() + 5);
 
-                    request = request.filter( ejs.AndFilter( [
-                        ejs.QueryFilter( mq ),
-                        ejs.QueryFilter( rangeQuery )
-                    ] ) );
-                    console.log( request.toString() )
+                        var fromDate = new Date( messageTime );
+                        fromDate.setMinutes(messageTime.getMinutes() - 5);
+
+                        console.log("to: " + toDate)
+                        console.log("from: " + fromDate)
+                        console.log("message: " + message._source['@timestamp'])
+                        var rangeQuery = ejs.RangeQuery( '@timestamp' );
+                        rangeQuery.lt( toDate.toISOString() );
+                        rangeQuery.gt( fromDate.toISOString() );
+
+                        andFilters.push( ejs.QueryFilter( rangeQuery ) );
+                    }
+                    for ( var filterKey in message.kibana['contextFilters']['match'] ) {
+                        if (message._source[filterKey] !== undefined) {
+                            andFilters.push(
+                                ejs.QueryFilter( ejs.BoolQuery().must( ejs.TermQuery( filterKey, message._source[filterKey] ) ) )
+                            );
+                        }
+                    }
+                    request = request.filter( ejs.AndFilter( andFilters ) ).sort(message.kibana['contextFilters']['sort'], message.kibana['contextFilters']['sortDirection']).size(1000);
                     request.doSearch().then( function( results ) {
                         console.log( 'res' )
                         console.log( results )
@@ -541,45 +547,7 @@ function (angular, app, _, kbn, moment) {
                 } else {
                     $scope.showAdvancedContextMenu( message );
                 }
-//            require('elasticsearch').client.search({
-//                index: message._index,
-//                body: ejs.Request()
-//                    .query(rangeQuery)
-//            },
-//                function(error, response){
-//                    console.log('error:');
-//                    console.log(error);
-//                    console.log('response:');
-//                    console.log(response);
-//                }
-//            );
-//            console.log(ejs.client)
-//            ejs.client.get('/',newQuery,function(){console.log(arguments)}, function(){console.log('error')} ).then(function(){console.log('then:');console.log(arguments)})
-//            $scope.ejs.client.get('/' + dashboard.indices + '/_mapping/field/' + newQuery.field,
-//                undefined, undefined, function(data, status) {
-//                    console.log(1111111111)
-//                    console.log(data)
-//                    console.log(status);
-//                    console.log(1111111111)
-//
-//                });
 
-//            console.log('########NEWQUERY########')
-//            console.log(newQuery);
-//            console.log(querySrv.list())
-//            console.log('@@@@@@@@@@@')
-//            var res = ejs.QueryStringQuery(newQuery.field+":"+newQuery.query)
-//            console.log(res)
-
-//            console.log('@@@@@@@@@@@')
-
-//            querySrv.resolve().then(function(){
-//                console.log('!!!!!!')
-//                console.log(arguments);
-//                console.log('!!!!!!')
-//            });
-//            console.log('/########NEWQUERY########')
-                //querySrv.set(NEW QUERY)
                 var context = _.filter( $scope.data, function( item ) {
                     return item._source.path === message._source.path && item._source.host === message._source.host;
                 } );

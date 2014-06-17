@@ -59,6 +59,12 @@
     .table-event-highlight:hover td {
         background-color: rgba(150,150,50,.25) !important;
     }
+    .context-filters{
+          margin-left: 10px;
+    }
+    .context-filters ul{
+        list-style-type: none;
+    }
   </style>
 
   <div class="table-container">
@@ -174,20 +180,23 @@
                 <div>
                     <div ng-switch-when="context">
                   <div ng-show="event.kibana.showAdvancedContext" class="clearfix">
-                    <div class="pull-left">
+                    <div class="pull-left context-filters">
                         <span>Match Filters:</span>
                         <ul><li ng-repeat="(key, value) in event.kibana._source track by $index">
                             <input type="checkbox" ng-click="toggleContextFilter(event, 'match', key)"
                                    ng-checked="event.kibana['contextFilters']['match'][key]"/><span>&nbsp;{{key}}</span>
                         </li></ul>
                     </div>
-                      <div class="pull-left" style="margin-left: 10px;">
-                          <span>Sort Filter:&nbsp;</span>
-                          <span><input type="radio" ng-model="event.kibana['contextFilters']['sortDirection']" value="desc"/> Descending</span>
-                          <span><input type="radio" ng-model="event.kibana['contextFilters']['sortDirection']" value="asc"/> Ascending</span>
+                      <div class="pull-left context-filters" style="margin-left: 10px;">
+                          <div>Sort Filter*: <br />If not using '@timestamp', context may take longer to run.</div>
                           <ul><li ng-repeat="(key, value) in event.kibana._source track by $index">
                               <input type="radio" ng-model="event.kibana['contextFilters']['sort']" value="{{key}}"/><span>&nbsp;{{key}}</span>
                           </li></ul>
+                      </div>
+                      <div class="pull-left context-filters" style="margin-left: 10px; ">
+                          <span>Sort Direction:&nbsp;</span> <br />
+                          <span><input type="radio" ng-model="event.kibana['contextFilters']['sortDirection']" value="desc"/> Descending</span> <br />
+                          <span><input type="radio" ng-model="event.kibana['contextFilters']['sortDirection']" value="asc"/> Ascending</span>
                       </div>
                   </div>
                     </div>
