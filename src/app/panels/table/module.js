@@ -333,9 +333,6 @@ function (angular, app, _, kbn, moment) {
 
       boolQuery = $scope.ejs.BoolQuery();
       _.each(queries,function(q) {
-          console.log(2222222)
-          console.log(q)
-          console.log(2222222)
         boolQuery = boolQuery.should(querySrv.toEjsObj(q));
       });
 
@@ -468,110 +465,128 @@ function (angular, app, _, kbn, moment) {
       }
       return obj;
     };
-    $scope.showAdvancedContextMenu = function(event){
-        console.log('clicked')
-        event.kibana['showAdvancedContext'] = !event.kibana['showAdvancedContext'];
-        console.log(event.kibana['showAdvancedContext'])
-    }
-    $scope.toggleContextFilter = function(message, filter, key, singleKeyFilter){
-        message.kibana['contextFilters'] = message.kibana['contextFilters'] || {};
-        message.kibana['contextFilters'][filter] = message.kibana['contextFilters'][filter] || {};
-        if(singleKeyFilter){
-            for(var k in message.kibana['contextFilters'][filter]){
-                if(k === key) continue;
-                message.kibana['contextFilters'][filter][k] = false;
-            }
+    $scope.showAdvancedContextMenu = function(event, forceTF){
+        if(forceTF !== undefined){
+            event.kibana['showAdvancedContext'] = forceTF;
+        } else {
+            event.kibana['showAdvancedContext'] = !event.kibana['showAdvancedContext'];
         }
-        console.log(message.kibana['contextFilters'][filter]);
-        message.kibana['contextFilters'][filter][key] = !message.kibana['contextFilters'][filter][key];
-    }
-    $scope.getContext = function(message, forceRefresh) {
-        message.kibana['contextFilters'] = message.kibana['contextFilters'] || {};
-        if(!message.kibana['contextFilters']['sort']){
-            message.kibana['contextFilters']['sort'] = '';
-            if(message._source['@timestamp']){
-                message.kibana['contextFilters']['sort'] = '@timestamp';
-            }
-        }
-        if(!message.kibana['contextFilters']['sortDirection']){
-            message.kibana['contextFilters']['sortDirection'] = 'asc';
-        }
-        if(!message.kibana['contextFilters']['match']){
-            message.kibana['contextFilters']['match'] = {}
-            if(message._source['context_filter']){
-                message.kibana['contextFilters']['match']['context_filter'] = true;
-            }
-        }
-        forceRefresh = forceRefresh || false;
+    };
+
+    $scope.toggleContextFilter = function(event, filter, key){
+        event.kibana['contextFilters'][filter] = event.kibana['contextFilters'][filter] || {};
+        event.kibana['contextFilters'][filter][key] = !event.kibana['contextFilters'][filter][key];
+    };
+
+    $scope.getContext = function(event, forceRefresh) {
+        $scope.setEventContextDefaults(event);
         if(forceRefresh){
-            message.kibana.contextLoaded = false;
+            event.kibana.contextLoaded = false;
         }
-        //console.log(message);
-        if(!message.kibana.contextLoaded) {
-            var preContext = 10;
-            var postContext = 10;
+        if(!event.kibana.contextLoaded) {
             $timeout( function() {
-                if(!!message.kibana['contextFilters'] && !!message.kibana['contextFilters']['sort'] ) {
-                    var request = $scope.ejs.Request().indices( message._index );
+                if(!!event.kibana['contextFilters'] && !!event.kibana['contextFilters']['sort'] ) {
+                    var request = $scope.ejs.Request().indices( event._index );
                     var andFilters = [];
-                    if(message.kibana['contextFilters']['sort'] === '@timestamp'){
-                        var messageTime = new Date( message._source['@timestamp'] );
-                        var toDate = new Date( messageTime );
-                        toDate.setMinutes(messageTime.getMinutes() + 5);
-
-                        var fromDate = new Date( messageTime );
-                        fromDate.setMinutes(messageTime.getMinutes() - 5);
-
-                        console.log("to: " + toDate)
-                        console.log("from: " + fromDate)
-                        console.log("message: " + message._source['@timestamp'])
+                    if(event.kibana['contextFilters']['sort'] === '@timestamp' && event.kibana['contextFilters']['timeVariance'] >= 0){
+                        var eventTime = new Date( event._source['@timestamp'] );
+                        var toDate = new Date( eventTime );
+                        toDate.setSeconds(eventTime.getSeconds() + event.kibana['contextFilters']['timeVariance']);
+                        var fromDate = new Date( eventTime );
+                        fromDate.setSeconds(eventTime.getSeconds() - event.kibana['contextFilters']['timeVariance']);
                         var rangeQuery = ejs.RangeQuery( '@timestamp' );
                         rangeQuery.lt( toDate.toISOString() );
                         rangeQuery.gt( fromDate.toISOString() );
-
-                        andFilters.push( ejs.QueryFilter( rangeQuery ) );
+                        andFilters.push( rangeQuery );
                     }
-                    for ( var filterKey in message.kibana['contextFilters']['match'] ) {
-                        if (message._source[filterKey] !== undefined) {
-                            andFilters.push(
-                                ejs.QueryFilter( ejs.BoolQuery().must( ejs.TermQuery( filterKey, message._source[filterKey] ) ) )
-                            );
+                    for ( var filterKey in event.kibana['contextFilters']['match'] ) {
+                        if (event._source[filterKey] !== undefined && event.kibana['contextFilters']['match'][filterKey]) {
+                           andFilters.push(
+                                ejs.BoolQuery().must( ejs.TermQuery( filterKey, event._source[filterKey] ) )
+                           );
                         }
                     }
-                    request = request.filter( ejs.AndFilter( andFilters ) ).sort(message.kibana['contextFilters']['sort'], message.kibana['contextFilters']['sortDirection']).size(1000);
-                    request.doSearch().then( function( results ) {
-                        console.log( 'res' )
-                        console.log( results )
-                        console.log( 'end res' )
+                    request = request.filter( ejs.AndFilter( _.map(andFilters, function(filter) { return ejs.QueryFilter(filter); })));
+                    request.sort( event.kibana['contextFilters']['sort'], event.kibana['contextFilters']['sortDirection'] )
+                        .size( parseInt( event.kibana['contextFilters']['maxReturnResults'] ) )
+                        .doSearch().then( function( results ) {
+                        event.kibana.contextLoaded = true;
+                        var context = results.hits.hits;
+                        var eventIndex = _.findIndex(context, function(hit){
+                            return hit._id === event._id;
+                        });
+                        if (eventIndex === -1){
+                            event.kibana.postContext = [];
+                            event.kibana.preContext = [];
+                            event.kibana['contextError'] = true;
+                            event.kibana['contextErrorText'] = "Unable to find context.  Try increasing the Max Context Lookup Results.";
+                            $scope.showAdvancedContextMenu( event, true );
+                            return;
+                        }
+                        event.kibana['contextError'] = false;
+                        var preContextEndIndex = eventIndex + event.kibana['contextFilters']['displayEvents']['to'];
+                        if( preContextEndIndex >= context.length ) {
+                            preContextEndIndex = context.length - 1
+                        }
+                        var postContextStartIndex = eventIndex - event.kibana['contextFilters']['displayEvents']['from'];
+                        if( postContextStartIndex < 0 ) {
+                            postContextStartIndex = 0;
+                        }
+                        event.kibana.postContext = context.slice( postContextStartIndex, eventIndex );
+                        event.kibana.preContext = context.slice( eventIndex + 1, preContextEndIndex + 1 )
+
+
                     } )
                 } else {
-                    $scope.showAdvancedContextMenu( message );
+                    $scope.showAdvancedContextMenu( event );
                 }
-
-                var context = _.filter( $scope.data, function( item ) {
-                    return item._source.path === message._source.path && item._source.host === message._source.host;
-                } );
-                var messageIndex = context.indexOf( message );
-                var preContextEndIndex = messageIndex + preContext;
-                if( preContextEndIndex >= context.length ) {
-                    preContextEndIndex = context.length - 1
-                }
-                var postContextStartIndex = messageIndex - postContext;
-                if( postContextStartIndex < 0 ) {
-                    postContextStartIndex = 0;
-                }
-//            console.log('postContextStartIndex: '+postContextStartIndex + ', message index: ' + messageIndex + ', preContextEndIndex: ' + preContextEndIndex)
-                message.kibana.postContext = context.slice( postContextStartIndex, messageIndex );
-                message.kibana.preContext = context.slice( messageIndex + 1, preContextEndIndex )
-                message.kibana.contextLoaded = true;
-//            console.log(message.kibana.postContext)
-//            console.log(message)
-//            console.log(message.kibana.preContext)
-
             }, 10 );
         }
 
     }
+      
+    $scope.setEventContextDefaults = function (event) {
+          event.kibana['contextFilters'] = event.kibana['contextFilters'] || {};
+          if(event.kibana['contextFilters']['filters'] === undefined){
+              event.kibana['contextFilters']['filters'] = [];
+              for( var key in event._source ){
+                  if( event._source.hasOwnProperty(key) ){
+                      event.kibana['contextFilters']['filters'].push(key);
+                  }
+              }
+          }
+          if(!event.kibana['contextFilters']['sort']){
+              event.kibana['contextFilters']['sort'] = '';
+              if(event._source['@timestamp']){
+                  event.kibana['contextFilters']['sort'] = '@timestamp';
+              }
+          }
+          if(event.kibana['contextFilters']['timeVariance'] === undefined){
+              event.kibana['contextFilters']['timeVariance'] = 30;
+          }
+          if(!event.kibana['contextFilters']['sortDirection']){
+              event.kibana['contextFilters']['sortDirection'] = 'asc';
+          }
+          if(event.kibana['contextFilters']['sortPreviousSearchAmount'] === undefined){
+              event.kibana['contextFilters']['sortPreviousSearchAmount'] = {};
+              event.kibana['contextFilters']['sortPreviousSearchAmount']['from'] =
+                  event.kibana['contextFilters']['sortPreviousSearchAmount']['to'] = 5;
+          }
+          if(event.kibana['contextFilters']['displayEvents'] === undefined){
+              event.kibana['contextFilters']['displayEvents'] = {};
+              event.kibana['contextFilters']['displayEvents']['from'] =
+                  event.kibana['contextFilters']['displayEvents']['to'] = 10;
+          }
+          if(!event.kibana['contextFilters']['match']){
+              event.kibana['contextFilters']['match'] = {}
+              if(event._source['context_filter']){
+                  event.kibana['contextFilters']['match']['context_filter'] = true;
+              }
+          }
+        if(event.kibana['contextFilters']['maxReturnResults'] === undefined || event.kibana['contextFilters']['maxReturnResults'] === null){
+              event.kibana['contextFilters']['maxReturnResults'] = 100;
+          }
+      }
   });
 
   // This also escapes some xml sequences
