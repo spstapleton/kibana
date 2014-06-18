@@ -484,7 +484,8 @@ $scope.findNext = function() {
 
 $scope.resetFind = function() {
   $("#eventTable .findResult").each(function(){
-    $(this).removeClass("findResult");
+    var t = $(this).text();
+    $(this).replaceWith(t);
   });
 };
 
