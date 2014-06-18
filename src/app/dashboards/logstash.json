@@ -126,7 +126,7 @@
           "style": {
             "font-size": "9pt"
           },
-          "overflow": "min-height",
+          "overflow": "table-expand",
           "fields": [],
           "localTime": true,
           "timeField": "@timestamp",
