@@ -1,5 +1,5 @@
 {
-  "title": "Logstash Search",
+  "title": "EZLogger",
   "services": {
     "query": {
       "list": {
@@ -115,7 +115,7 @@
           "group": [
             "default"
           ],
-          "type": "table",
+          "type": "ezlogger-table",
           "size": 100,
           "pages": 5,
           "offset": 0,
