@@ -135,7 +135,7 @@
           "header": true,
           "paging": true,
           "spyable": true,
-          "facet": "service_name",
+          "facet": ["service_name","app_name"],
           "queries": {
             "mode": "all",
             "ids": [

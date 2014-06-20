@@ -125,8 +125,10 @@
        * spyable:: Set to false to disable the inspect icon
        */
        spyable : true,
-
-       facet: 'service_name',
+       /** @scratch /panels/table/5
+       * facets:: Array of field names to place in sidebar facets.
+       */
+       facets: [],
       /** @scratch /panels/table/5
        *
        * ==== Queries
@@ -154,6 +156,7 @@
 
       $scope.fields = fields;
       $scope.get_data();
+
 
     };
 
@@ -254,7 +257,6 @@
     };
 
     $scope.toggle_field = function(field) {
-      // $scope.resetFind();
       if (_.indexOf($scope.panel.fields,field) > -1) {
         $scope.panel.fields = _.without($scope.panel.fields,field);
         delete $scope.columns[field];
@@ -264,24 +266,34 @@
       }
     };
 
-    $scope.toggle_facet_field = function(field,negate) {
+    $scope.toggle_facet_field = function(field,facet) {
 
-      if(_.isUndefined($scope.checkedFacetField)){
-        $scope.checkedFacetField = [];
+      if(_.isUndefined($scope.checkedSidebarFacets[facet])){
+        $scope.checkedSidebarFacets[facet] = {};
       } 
-      if (_.isUndefined($scope.checkedFacetField[field]) || $scope.checkedFacetField[field] === -1) {
+      if (_.isUndefined($scope.checkedSidebarFacets[facet][field]) || $scope.checkedSidebarFacets[facet][field] === -1) {
         var query = angular.toJson(field);
         $scope.panel.offset = 0;
-        var id = filterSrv.set({type:'field',field:$scope.panel.facet,query:query,mandate:'either'});
-        $scope.checkedFacetField[field] = id;
+        var id = filterSrv.set({type:'field',field:facet,query:query,mandate:'must'});
+        $scope.checkedSidebarFacets[facet][field] = id;
       } else {
 
         // $scope.panel.offset = 0;
-        filterSrv.remove($scope.checkedFacetField[field]);
-        $scope.checkedFacetField[field] = -1;
+        filterSrv.remove($scope.checkedSidebarFacets[facet][field]);
+        $scope.checkedSidebarFacets[facet][field] = -1;
       }
     };
+    $scope.fix_facet_checkboxes = function(){
 
+      for (var f in $scope.checkedSidebarFacets){
+        for (var r in $scope.checkedSidebarFacets[f]){
+          if($scope.checkedSidebarFacets[f][r] !==-1 && filterSrv.ids().indexOf($scope.checkedSidebarFacets[f][r]) === -1){
+            $scope.checkedSidebarFacets[f][r]=-1;
+          }
+        }
+      }
+    };
+    
     $scope.toggle_highlight = function(field) {
       if (_.indexOf($scope.panel.highlight,field) > -1) {
         $scope.panel.highlight = _.without($scope.panel.highlight,field);
@@ -369,23 +381,32 @@
           .postTags('@end-highlight@')
           )
       .size($scope.panel.size*$scope.panel.pages)
-      .sort(sort)
-      .facet(ejs.TermsFacet('facetField').field($scope.panel.facet));
+      .sort(sort);
+      $scope.checkedSidebarFacets = $scope.checkedSidebarFacets || {};
+      $scope.panel.facets.forEach(function(f){
+        request=request.facet(ejs.TermsFacet(f).field(f));
+      });
+      $scope.sidebarFacets = $scope.sidebarFacets || {};
 
       $scope.populate_modal(request);
 
+      
       // Populate scope when we have results
       request.doSearch().then(function(results) {
-        var servs = [];
-        results.facets.facetField.terms.forEach(function(r){
-          console.log(r);
-          servs.push(r.term);
-        });
-        $scope.facetField = {
-          field : $scope.panel.facet,
-          values : servs
-        };
 
+        $scope.panel.facets.forEach(function(f){
+          var servs = [];
+          results.facets[f].terms.forEach(function(r){
+            servs.push(r.term);
+            
+          });
+          if (servs.length !== 0){
+            $scope.sidebarFacets[f] = {
+              field : f,
+              values : servs.sort()
+            };}
+          });
+        $scope.fix_facet_checkboxes();
         $scope.panelMeta.loading = false;
 
         if(_segment === 0) {
@@ -458,17 +479,6 @@
           _segment+1 < dashboard.indices.length) {
           $scope.get_data(_segment+1,$scope.query_id);
       }
-      // var servs = [];
-      // request.size(0).doSearch().then(function(result){
-      //   result.facets.facetField.terms.forEach(function(r){
-      //     console.log(r);
-      //     servs.push(r.term);
-      //   });
-      //   $scope.facetField = {
-      //     field : $scope.panel.facet,
-      //     values : servs
-      //   };
-      // });
 
 });
 };
@@ -540,7 +550,9 @@ $scope.setFind = function(){
     }
   });
 };
-
+$scope.styleName = function(string){
+  return string.replace(/_/g, ' ').replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});  
+};
 
 
 });
