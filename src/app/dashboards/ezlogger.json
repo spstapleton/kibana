@@ -115,7 +115,7 @@
           "group": [
             "default"
           ],
-          "type": "ezlogger-table",
+          "type": "table",
           "size": 100,
           "pages": 5,
           "offset": 0,
