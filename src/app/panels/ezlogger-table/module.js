@@ -125,6 +125,8 @@
        * spyable:: Set to false to disable the inspect icon
        */
        spyable : true,
+
+       facet: 'service_name',
       /** @scratch /panels/table/5
        *
        * ==== Queries
@@ -132,6 +134,7 @@
        * queries.mode::: Of the queries available, which to use. Options: +all, pinned, unpinned, selected+
        * queries.ids::: In +selected+ mode, which query ids are selected.
        */
+
        queries     : {
         mode        : 'all',
         ids         : []
@@ -262,21 +265,21 @@
       }
     };
 
-    $scope.toggle_service = function(field,negate) {
+    $scope.toggle_facet_field = function(field,negate) {
 
-      if(_.isUndefined($scope.checkedServices)){
-        $scope.checkedServices = [];
+      if(_.isUndefined($scope.checkedFacetField)){
+        $scope.checkedFacetField = [];
       } 
-      if (_.isUndefined($scope.checkedServices[field]) || $scope.checkedServices[field] === -1) {
+      if (_.isUndefined($scope.checkedFacetField[field]) || $scope.checkedFacetField[field] === -1) {
         var query = angular.toJson(field);
         $scope.panel.offset = 0;
-        var id = filterSrv.set({type:'field',field:'service_name',query:query,mandate:'either'});
-        $scope.checkedServices[field] = id;
+        var id = filterSrv.set({type:'field',field:$scope.panel.facet,query:query,mandate:'either'});
+        $scope.checkedFacetField[field] = id;
       } else {
-        
+
         // $scope.panel.offset = 0;
-        filterSrv.remove($scope.checkedServices[field]);
-        $scope.checkedServices[field] = -1;
+        filterSrv.remove($scope.checkedFacetField[field]);
+        $scope.checkedFacetField[field] = -1;
       }
     };
 
@@ -367,12 +370,23 @@
           .postTags('@end-highlight@')
           )
       .size($scope.panel.size*$scope.panel.pages)
-      .sort(sort);
+      .sort(sort)
+      .facet(ejs.TermsFacet('facetField').field($scope.panel.facet));
 
       $scope.populate_modal(request);
 
       // Populate scope when we have results
       request.doSearch().then(function(results) {
+        var servs = [];
+        results.facets.facetField.terms.forEach(function(r){
+          console.log(r);
+          servs.push(r.term);
+        });
+        $scope.facetField = {
+          field : $scope.panel.facet,
+          values : servs
+        };
+
         $scope.panelMeta.loading = false;
 
         if(_segment === 0) {
@@ -445,29 +459,21 @@
           _segment+1 < dashboard.indices.length) {
           $scope.get_data(_segment+1,$scope.query_id);
       }
-      
-      $scope.set_facets();
+      // var servs = [];
+      // request.size(0).doSearch().then(function(result){
+      //   result.facets.facetField.terms.forEach(function(r){
+      //     console.log(r);
+      //     servs.push(r.term);
+      //   });
+      //   $scope.facetField = {
+      //     field : $scope.panel.facet,
+      //     values : servs
+      //   };
+      // });
 
-    });
+});
 };
 
-$scope.set_facets = function() {
-  var req = ejs.Request().indices(dashboard.indices[$scope.segment])
-  .query(ejs.MatchAllQuery())
-  .facet(
-    ejs.TermsFacet('service_name')
-    .field('service_name'));
-  var servs=[];
-  req.size(0).doSearch().then(function(result){
-    result.facets.service_name.terms.forEach(function(r){
-      servs.push(r.term);
-    });
-    $scope.services = {
-      field : 'service_name',
-      values : servs
-    };
-  });
-};
 
 $scope.populate_modal = function(request) {
   $scope.inspector = angular.toJson(JSON.parse(request.toString()),true);

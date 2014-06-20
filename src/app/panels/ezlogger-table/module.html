@@ -123,8 +123,8 @@
 
             <strong>Services</strong>
             <ul class="unstyled">
-              <li ng-repeat="field in services.values">
-                <span><i class="pointer" ng-class="{'icon-check-empty': checkedServices[field] === -1 || _.isUndefined(checkedServices[field]), 'icon-check': checkedServices[field] !== -1}" ng-click="toggle_service(field);dismiss();"></i>
+              <li ng-repeat="field in facetField.values">
+                <span><i class="pointer" ng-class="{'icon-check-empty': checkedFacetField[field] === -1 || _.isUndefined(checkedFacetField[field]), 'icon-check': checkedFacetField[field] !== -1}" ng-click="toggle_facet_field(field);dismiss();"></i>
                 {{{true: "__blank__", false:field }[(field == '' || field == undefined) && field != 0]|tableTruncate:panel.trimFactor:3}}
                   
                   </span>
