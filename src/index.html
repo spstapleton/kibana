@@ -41,8 +41,10 @@
       <div class="navbar-inner">
         <div class="container-fluid">
           <span class="brand"><img src="img/small.png" bs-tooltip="'Kibana '+(kbnVersion=='@REV@'?'master':kbnVersion)" data-placement="bottom"> {{dashboard.current.title}}</span>
-
+          <span class="brand" style="font-size:16px;"><a style="vertical-align: baseline;" href="appselect">Change application</a></span>
           <ul class="nav pull-right" ng-controller='dashLoader' ng-init="init()" ng-include="'app/partials/dashLoader.html'">
+          
+
           </ul>
         </div>
       </div>
