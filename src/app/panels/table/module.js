@@ -125,6 +125,10 @@
        * spyable:: Set to false to disable the inspect icon
        */
        spyable : true,
+       /** @scratch /panels/table/5
+       * facets:: Array of field names to place in sidebar facets.
+       */
+       facets: [],
       /** @scratch /panels/table/5
        *
        * ==== Queries
@@ -152,6 +156,7 @@
 
       $scope.fields = fields;
       $scope.get_data();
+
 
     };
 
@@ -252,7 +257,6 @@
     };
 
     $scope.toggle_field = function(field) {
-      // $scope.resetFind();
       if (_.indexOf($scope.panel.fields,field) > -1) {
         $scope.panel.fields = _.without($scope.panel.fields,field);
         delete $scope.columns[field];
@@ -262,6 +266,34 @@
       }
     };
 
+    $scope.toggle_facet_field = function(field,facet) {
+
+      if(_.isUndefined($scope.checkedSidebarFacets[facet])){
+        $scope.checkedSidebarFacets[facet] = {};
+      } 
+      if (_.isUndefined($scope.checkedSidebarFacets[facet][field]) || $scope.checkedSidebarFacets[facet][field] === -1) {
+        var query = angular.toJson(field);
+        $scope.panel.offset = 0;
+        var id = filterSrv.set({type:'field',field:facet,query:query,mandate:'must'});
+        $scope.checkedSidebarFacets[facet][field] = id;
+      } else {
+
+        // $scope.panel.offset = 0;
+        filterSrv.remove($scope.checkedSidebarFacets[facet][field]);
+        $scope.checkedSidebarFacets[facet][field] = -1;
+      }
+    };
+    $scope.fix_facet_checkboxes = function(){
+
+      for (var f in $scope.checkedSidebarFacets){
+        for (var r in $scope.checkedSidebarFacets[f]){
+          if($scope.checkedSidebarFacets[f][r] !==-1 && filterSrv.ids().indexOf($scope.checkedSidebarFacets[f][r]) === -1){
+            $scope.checkedSidebarFacets[f][r]=-1;
+          }
+        }
+      }
+    };
+    
     $scope.toggle_highlight = function(field) {
       if (_.indexOf($scope.panel.highlight,field) > -1) {
         $scope.panel.highlight = _.without($scope.panel.highlight,field);
@@ -350,11 +382,31 @@
           )
       .size($scope.panel.size*$scope.panel.pages)
       .sort(sort);
+      $scope.checkedSidebarFacets = $scope.checkedSidebarFacets || {};
+      $scope.panel.facets.forEach(function(f){
+        request=request.facet(ejs.TermsFacet(f).field(f));
+      });
+      $scope.sidebarFacets = $scope.sidebarFacets || {};
 
       $scope.populate_modal(request);
 
+      
       // Populate scope when we have results
       request.doSearch().then(function(results) {
+
+        $scope.panel.facets.forEach(function(f){
+          var servs = [];
+          results.facets[f].terms.forEach(function(r){
+            servs.push(r.term);
+            
+          });
+          if (servs.length !== 0){
+            $scope.sidebarFacets[f] = {
+              field : f,
+              values : servs.sort()
+            };}
+          });
+        $scope.fix_facet_checkboxes();
         $scope.panelMeta.loading = false;
 
         if(_segment === 0) {
@@ -428,8 +480,9 @@
           $scope.get_data(_segment+1,$scope.query_id);
       }
 
-    });
+});
 };
+
 
 $scope.populate_modal = function(request) {
   $scope.inspector = angular.toJson(JSON.parse(request.toString()),true);
@@ -497,7 +550,9 @@ $scope.setFind = function(){
     }
   });
 };
-
+$scope.styleName = function(string){
+  return string.replace(/_/g, ' ').replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});  
+};
 
 
 });
@@ -568,25 +623,25 @@ $scope.setFind = function(){
 
 });
 $.fn.replaceText = function( search, replace, text_only ) {
-return this.each(function(){
-        var node = this.firstChild,
-        val, new_val, remove = [];
-        if ( node ) {
-            do {
-              if ( node.nodeType === 3 ) {
-                val = node.nodeValue;
-                new_val = val.replace( search, replace );
-                if ( new_val !== val ) {
-                  if ( !text_only && /</.test( new_val ) ) {
-                    $(node).before( new_val );
-                    remove.push( node );
-                  } else {
-                    node.nodeValue = new_val;
-                  }
-                }
-              }
-            } while ( node = node.nextSibling );
+  return this.each(function(){
+    var node = this.firstChild,
+    val, new_val, remove = [];
+    if ( node ) {
+      do {
+        if ( node.nodeType === 3 ) {
+          val = node.nodeValue;
+          new_val = val.replace( search, replace );
+          if ( new_val !== val ) {
+            if ( !text_only && /</.test( new_val ) ) {
+              $(node).before( new_val );
+              remove.push( node );
+            } else {
+              node.nodeValue = new_val;
+            }
+          }
         }
-        remove.length && $(remove).remove();
-    });
+      } while ( node = node.nextSibling );
+    }
+    remove.length && $(remove).remove();
+  });
 };
