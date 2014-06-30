@@ -41,7 +41,9 @@ function (angular, _, config, moment) {
         undefined, undefined, function (data, p) {
           if (p === 404) {
             return [];
-          }
+          } else if(data.error){
+              alertSrv.set('Error',data.error,'error');
+            }
           else if(p === 0) {
             alertSrv.set('Error',"Could not contact Elasticsearch at "+ejs.config.server+
               ". Please ensure that Elasticsearch is reachable from your system." ,'error');
