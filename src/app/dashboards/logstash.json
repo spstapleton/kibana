@@ -130,6 +130,7 @@
           "fields": [],
           "localTime": true,
           "timeField": "@timestamp",
+          "contextMatchFields": ["app_name", "service_name"],
           "highlight": [],
           "sortable": true,
           "header": true,
