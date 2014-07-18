@@ -554,6 +554,117 @@ $scope.styleName = function(string){
   return string.replace(/_/g, ' ').replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});  
 };
 
+      $scope.showAdvancedContextMenu = function(event, forceTF){
+        if(forceTF !== undefined){
+          event.kibana['showAdvancedContext'] = forceTF;
+        } else {
+          event.kibana['showAdvancedContext'] = !event.kibana['showAdvancedContext'];
+        }
+      };
+
+      $scope.toggleContextFilter = function(event, filter, key){
+        event.kibana['contextFilters'][filter] = event.kibana['contextFilters'][filter] || {};
+        event.kibana['contextFilters'][filter][key] = !event.kibana['contextFilters'][filter][key];
+      };
+
+      $scope.getContext = function(event, forceRefresh) {
+        $scope.setEventContextDefaults(event);
+        if(forceRefresh){
+          event.kibana.contextLoaded = false;
+        }
+        if(!event.kibana.contextLoaded) {
+          if(!!event.kibana['contextFilters'] && !!event.kibana['contextFilters']['sort'] ) {
+            var request = $scope.ejs.Request().indices( event._index );
+            var andFilters = [];
+            if(!!event.kibana['contextFilters']['sort'] &&
+              event.kibana['contextFilters']['sort'] === $scope.panel.timeField &&
+              event.kibana['contextFilters']['timeVariance'] >= 0) {
+              var eventTime = new Date( event._source[$scope.panel.timeField] );
+              var toDate = new Date( eventTime );
+              toDate.setSeconds( eventTime.getSeconds() + event.kibana['contextFilters']['timeVariance'] );
+              var fromDate = new Date( eventTime );
+              fromDate.setSeconds( eventTime.getSeconds() - event.kibana['contextFilters']['timeVariance'] );
+              var rangeQuery = ejs.RangeQuery( $scope.panel.timeField );
+              rangeQuery.lt( toDate.toISOString() );
+              rangeQuery.gt( fromDate.toISOString() );
+              andFilters.push( rangeQuery );
+            }
+            for ( var filterKey in event.kibana['contextFilters']['match'] ) {
+              if (event._source[filterKey] !== undefined && event.kibana['contextFilters']['match'][filterKey]) {
+                andFilters.push( ejs.BoolQuery().must( ejs.TermQuery( filterKey, event._source[filterKey] ) ) );
+              }
+            }
+            request = request.filter( ejs.AndFilter( _.map(andFilters, function(filter) { return ejs.QueryFilter(filter); })));
+            request.sort( event.kibana['contextFilters']['sort'], event.kibana['contextFilters']['sortDirection'] )
+              .size( parseInt( event.kibana['contextFilters']['maxReturnResults'] ) )
+              .doSearch().then( function( results ) {
+                event.kibana.contextLoaded = true;
+                var context = results.hits.hits;
+                var eventIndex = _.findIndex(context, function(hit){
+                  return hit._id === event._id;
+                });
+                if (eventIndex === -1){
+                  event.kibana.postContext = [];
+                  event.kibana.preContext = [];
+                  event.kibana['contextError'] = true;
+                  event.kibana['contextErrorText'] = "Unable to find context.  Try increasing the Max Context Lookup Results.";
+                  $scope.showAdvancedContextMenu( event, true );
+                  return;
+                }
+                event.kibana['contextError'] = false;
+                var preContextEndIndex = eventIndex + event.kibana['contextFilters']['displayEvents']['to'];
+                if( preContextEndIndex >= context.length ) {
+                  preContextEndIndex = context.length - 1;
+                }
+                var postContextStartIndex = eventIndex - event.kibana['contextFilters']['displayEvents']['from'];
+                if( postContextStartIndex < 0 ) {
+                  postContextStartIndex = 0;
+                }
+                event.kibana.postContext = context.slice( postContextStartIndex, eventIndex );
+                event.kibana.preContext = context.slice( eventIndex + 1, preContextEndIndex + 1 );
+              });
+          } else {
+            $scope.showAdvancedContextMenu( event );
+          }
+        }
+      };
+
+      $scope.setEventContextDefaults = function (event) {
+        event.kibana['contextFilters'] = event.kibana['contextFilters'] || {};
+        if(event.kibana['contextFilters']['filters'] === undefined){
+          event.kibana['contextFilters']['filters'] = [];
+          for( var key in event._source ){
+            if( event._source.hasOwnProperty(key) ){
+              event.kibana['contextFilters']['filters'].push(key);
+            }
+          }
+        }
+        if(!event.kibana['contextFilters']['sort']){
+          event.kibana['contextFilters']['sort'] = $scope.panel.timeField || '';
+        }
+        if(event.kibana['contextFilters']['timeVariance'] === undefined){
+          event.kibana['contextFilters']['timeVariance'] = 30;
+        }
+        if(!event.kibana['contextFilters']['sortDirection']){
+          event.kibana['contextFilters']['sortDirection'] = 'asc';
+        }
+        if(event.kibana['contextFilters']['displayEvents'] === undefined){
+          event.kibana['contextFilters']['displayEvents'] = {};
+          event.kibana['contextFilters']['displayEvents']['from'] =
+            event.kibana['contextFilters']['displayEvents']['to'] = 10;
+        }
+        if(!event.kibana['contextFilters']['match']){
+          event.kibana['contextFilters']['match'] = {}
+          _.each($scope.panel.contextMatchFields || [], function(field){
+            if(event._source.hasOwnProperty(field)){
+              event.kibana['contextFilters']['match'][field] = true;
+            }
+          });
+        }
+        if(event.kibana['contextFilters']['maxReturnResults'] === undefined){
+          event.kibana['contextFilters']['maxReturnResults'] = 100;
+        }
+      }
 
 });
 
