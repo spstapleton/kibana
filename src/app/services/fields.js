@@ -50,7 +50,10 @@ function (angular, _, config) {
     this.map = function(indices) {
       var request = ejs.client.get('/' + indices.join(',') + "/_mapping",
         undefined, undefined, function(data, status) {
-          if(status === 0) {
+          if(data.error){
+              alertSrv.set('Error',data.error,'error');
+            }
+          else if(status === 0) {
             alertSrv.set('Error',"Could not contact Elasticsearch at "+ejs.config.server+
               ". Please ensure that Elasticsearch is reachable from your system." ,'error');
           } else {

@@ -30,15 +30,18 @@ function (angular, _, config) {
       } else {
         var nodeInfo = ejs.client.get('/_nodes',
           undefined, undefined, function(data, status) {
-          if(_.isUndefined(status)) {
-            alertSrv.set('Error',"Could not contact Elasticsearch at "+ejs.client.server()+
-              ". Please ensure that Elasticsearch is reachable from your system." ,'error');
-          } else {
-            alertSrv.set('Error',"Could not reach "+ejs.client.server()+"/_nodes. If you"+
-            " are using a proxy, ensure it is configured correctly",'error');
-          }
-          return;
-        });
+            if(data.error){
+              alertSrv.set('Error',data.error,'error');
+            }
+            else if(_.isUndefined(status)) {
+              alertSrv.set('Error',"Could not contact Elasticsearch at "+ejs.client.server()+
+                ". Please ensure that Elasticsearch is reachable from your system." ,'error');
+            } else {
+              alertSrv.set('Error',"Could not reach "+ejs.client.server()+"/_nodes. If you"+
+                " are using a proxy, ensure it is configured correctly",'error');
+            }
+            return;
+          });
 
         return nodeInfo.then(function(p) {
           _.each(p.nodes, function(v) {

@@ -148,10 +148,15 @@ function (angular, $, kbn, _, config, moment, Modernizr) {
         if(_.isUndefined(filterSrv)) {
           return;
         }
+        var indexPattern;
+        if(self.current.index.pattern !== '[logstash-]YYYY.MM.DD'){
+          indexPattern = self.current.index.pattern;
+        } else {
+          indexPattern = config.default_search_index;
+        }
         if(filterSrv.idsByType('time').length > 0) {
           var _range = filterSrv.timeRange('last');
-          kbnIndex.indices(_range.from,_range.to,
-            self.current.index.pattern,self.current.index.interval
+          kbnIndex.indices(_range.from,_range.to,indexPattern,self.current.index.interval
           ).then(function (p) {
             if(p.length > 0) {
               self.indices = p;
@@ -360,7 +365,11 @@ function (angular, $, kbn, _, config, moment, Modernizr) {
         self.dash_load(response);
       };
       var errorcb = function(data, status) {
-        if(status === 0) {
+        console.log(data);
+        if(data.error){
+              alertSrv.set('Error',data.error,'error');
+            }
+        else if(status === 0) {
           alertSrv.set('Error',"Could not contact Elasticsearch at "+ejs.config.server+
             ". Please ensure that Elasticsearch is reachable from your system." ,'error');
         } else {

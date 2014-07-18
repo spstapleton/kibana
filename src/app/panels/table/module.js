@@ -12,32 +12,32 @@
  * defined columns and offers several interactions, such as performing adhoc terms aggregations.
  *
  */
-define([
+ define([
   'angular',
   'app',
   'lodash',
   'kbn',
   'moment',
   'jsonpath'
-],
-function (angular, app, _, kbn, moment) {
-  'use strict';
+  ],
+  function (angular, app, _, kbn, moment) {
+    'use strict';
 
-  var module = angular.module('kibana.panels.table', []);
-  app.useModule(module);
+    var module = angular.module('kibana.panels.table', []);
+    app.useModule(module);
 
-  module.controller('table', function($rootScope, $scope, $modal, $q, $compile, $timeout,
-    fields, querySrv, dashboard, filterSrv) {
-    $scope.panelMeta = {
-      modals : [
+    module.controller('table', function($rootScope, $scope, $document, $modal, $q, $compile, $timeout,
+      fields, querySrv, dashboard, filterSrv) {
+      $scope.panelMeta = {
+        modals : [
         {
           description: "Inspect",
           icon: "icon-info-sign",
           partial: "app/partials/inspector.html",
           show: $scope.panel.spyable
         }
-      ],
-      editorTabs : [
+        ],
+        editorTabs : [
         {
           title:'Paging',
           src: 'app/panels/table/pagination.html'
@@ -46,11 +46,11 @@ function (angular, app, _, kbn, moment) {
           title:'Queries',
           src: 'app/partials/querySelect.html'
         }
-      ],
-      status: "Stable",
-      description: "A paginated table of records matching your query or queries. Click on a row to "+
+        ],
+        status: "Stable",
+        description: "A paginated table of records matching your query or queries. Click on a row to "+
         "expand it and review all of the fields associated with that document. <p>"
-    };
+      };
 
     // Set and populate defaults
     var _d = {
@@ -67,64 +67,68 @@ function (angular, app, _, kbn, moment) {
       /** @scratch /panels/table/5
        * offset:: The current page
        */
-      offset  : 0,
+       offset  : 0,
       /** @scratch /panels/table/5
        * sort:: An array describing the sort order of the table. For example [`@timestamp',`desc']
        */
-      sort    : ['_score','desc'],
+       sort    : ['_score','desc'],
       /** @scratch /panels/table/5
        * overflow:: The css overflow property. `min-height' (expand) or `auto' (scroll)
        */
-      overflow: 'min-height',
+       overflow: 'table-expand',
       /** @scratch /panels/table/5
        * fields:: the fields used a columns of the table, in an array.
        */
-      fields  : [],
+       fields  : [],
       /** @scratch /panels/table/5
        * highlight:: The fields on which to highlight, in an array
        */
-      highlight : [],
+       highlight : [],
       /** @scratch /panels/table/5
        * sortable:: Set sortable to false to disable sorting
        */
-      sortable: true,
+       sortable: true,
       /** @scratch /panels/table/5
        * header:: Set to false to hide the table column names
        */
-      header  : true,
+       header  : true,
       /** @scratch /panels/table/5
        * paging:: Set to false to hide the paging controls of the table
        */
-      paging  : true,
+       paging  : true,
       /** @scratch /panels/table/5
        * field_list:: Set to false to hide the list of fields. The user will be able to expand it,
        * but it will be hidden by default
        */
-      field_list: true,
+       field_list: true,
       /** @scratch /panels/table/5
        * all_fields:: Set to true to show all fields in the mapping, not just the current fields in
        * the table.
        */
-      all_fields: false,
+       all_fields: false,
       /** @scratch /panels/table/5
        * trimFactor:: The trim factor is the length at which to truncate fields takinging into
        * consideration the number of columns in the table. For example, a trimFactor of 100, with 5
        * columns in the table, would trim each column at 20 character. The entirety of the field is
        * still available in the expanded view of the event.
        */
-      trimFactor: 300,
+       trimFactor: 300,
       /** @scratch /panels/table/5
        * localTime:: Set to true to adjust the timeField to the browser's local time
        */
-      localTime: false,
+       localTime: false,
       /** @scratch /panels/table/5
        * timeField:: If localTime is set to true, this field will be adjusted to the browsers local time
        */
-      timeField: '@timestamp',
+       timeField: '@timestamp',
       /** @scratch /panels/table/5
        * spyable:: Set to false to disable the inspect icon
        */
-      spyable : true,
+       spyable : true,
+       /** @scratch /panels/table/5
+       * facets:: Array of field names to place in sidebar facets.
+       */
+       facets: [],
       /** @scratch /panels/table/5
        *
        * ==== Queries
@@ -132,7 +136,7 @@ function (angular, app, _, kbn, moment) {
        * queries.mode::: Of the queries available, which to use. Options: +all, pinned, unpinned, selected+
        * queries.ids::: In +selected+ mode, which query ids are selected.
        */
-      queries     : {
+       queries     : {
         mode        : 'all',
         ids         : []
       },
@@ -146,13 +150,14 @@ function (angular, app, _, kbn, moment) {
       _.each($scope.panel.fields,function(field) {
         $scope.columns[field] = true;
       });
-
       $scope.Math = Math;
       $scope.identity = angular.identity;
       $scope.$on('refresh',function(){$scope.get_data();});
 
       $scope.fields = fields;
       $scope.get_data();
+
+
     };
 
     // Create a percent function for the view
@@ -219,9 +224,9 @@ function (angular, app, _, kbn, moment) {
 
       var nodeInfo = $scope.ejs.client.get('/' + dashboard.indices + '/_mapping/field/' + field,
         undefined, undefined, function(data, status) {
-        console.log(status);
-        return;
-      });
+          console.log(status);
+          return;
+        });
 
       return nodeInfo.then(function(p) {
         var types = _.uniq(jsonPath(p, '*.*.*.*.mapping.*.type'));
@@ -261,6 +266,34 @@ function (angular, app, _, kbn, moment) {
       }
     };
 
+    $scope.toggle_facet_field = function(field,facet) {
+
+      if(_.isUndefined($scope.checkedSidebarFacets[facet])){
+        $scope.checkedSidebarFacets[facet] = {};
+      } 
+      if (_.isUndefined($scope.checkedSidebarFacets[facet][field]) || $scope.checkedSidebarFacets[facet][field] === -1) {
+        var query = angular.toJson(field);
+        $scope.panel.offset = 0;
+        var id = filterSrv.set({type:'field',field:facet,query:query,mandate:'must'});
+        $scope.checkedSidebarFacets[facet][field] = id;
+      } else {
+
+        // $scope.panel.offset = 0;
+        filterSrv.remove($scope.checkedSidebarFacets[facet][field]);
+        $scope.checkedSidebarFacets[facet][field] = -1;
+      }
+    };
+    $scope.fix_facet_checkboxes = function(){
+
+      for (var f in $scope.checkedSidebarFacets){
+        for (var r in $scope.checkedSidebarFacets[f]){
+          if($scope.checkedSidebarFacets[f][r] !==-1 && filterSrv.ids().indexOf($scope.checkedSidebarFacets[f][r]) === -1){
+            $scope.checkedSidebarFacets[f][r]=-1;
+          }
+        }
+      }
+    };
+    
     $scope.toggle_highlight = function(field) {
       if (_.indexOf($scope.panel.highlight,field) > -1) {
         $scope.panel.highlight = _.without($scope.panel.highlight,field);
@@ -301,11 +334,11 @@ function (angular, app, _, kbn, moment) {
 
     $scope.get_data = function(segment,query_id) {
       var
-        _segment,
-        request,
-        boolQuery,
-        queries,
-        sort;
+      _segment,
+      request,
+      boolQuery,
+      queries,
+      sort;
 
       $scope.panel.error =  false;
 
@@ -340,20 +373,40 @@ function (angular, app, _, kbn, moment) {
         $scope.ejs.FilteredQuery(
           boolQuery,
           filterSrv.getBoolFilter(filterSrv.ids())
-        ))
-        .highlight(
-          $scope.ejs.Highlight($scope.panel.highlight)
+          ))
+      .highlight(
+        $scope.ejs.Highlight($scope.panel.highlight)
           .fragmentSize(2147483647) // Max size of a 32bit unsigned int
           .preTags('@start-highlight@')
           .postTags('@end-highlight@')
-        )
-        .size($scope.panel.size*$scope.panel.pages)
-        .sort(sort);
+          )
+      .size($scope.panel.size*$scope.panel.pages)
+      .sort(sort);
+      $scope.checkedSidebarFacets = $scope.checkedSidebarFacets || {};
+      $scope.panel.facets.forEach(function(f){
+        request=request.facet(ejs.TermsFacet(f).field(f));
+      });
+      $scope.sidebarFacets = $scope.sidebarFacets || {};
 
       $scope.populate_modal(request);
 
+      
       // Populate scope when we have results
       request.doSearch().then(function(results) {
+
+        $scope.panel.facets.forEach(function(f){
+          var servs = [];
+          results.facets[f].terms.forEach(function(r){
+            servs.push(r.term);
+            
+          });
+          if (servs.length !== 0){
+            $scope.sidebarFacets[f] = {
+              field : f,
+              values : servs.sort()
+            };}
+          });
+        $scope.fix_facet_checkboxes();
         $scope.panelMeta.loading = false;
 
         if(_segment === 0) {
@@ -376,8 +429,8 @@ function (angular, app, _, kbn, moment) {
           // This is exceptionally expensive, especially on events with a large number of fields
           $scope.data = $scope.data.concat(_.map(results.hits.hits, function(hit) {
             var
-              _h = _.clone(hit),
-              _p = _.omit(hit,'_source','sort','_score');
+            _h = _.clone(hit),
+            _p = _.omit(hit,'_source','sort','_score');
 
             // _source is kind of a lie here, never display it, only select values from it
             _h.kibana = {
@@ -408,9 +461,12 @@ function (angular, app, _, kbn, moment) {
             $scope.data.reverse();
           }
 
-          // Keep only what we need for the set
+          // Keep only what we need for the set, unless using infiniscroll
+          if ($scope.panel.overflow === 'table-nopagination'){     
+            $scope.panel.pages = 1;    
+          }
           $scope.data = $scope.data.slice(0,$scope.panel.size * $scope.panel.pages);
-
+          
         } else {
           return;
         }
@@ -422,173 +478,96 @@ function (angular, app, _, kbn, moment) {
           !((_.contains(filterSrv.timeField(),$scope.panel.sort[0])) && $scope.panel.sort[1] === 'desc')) &&
           _segment+1 < dashboard.indices.length) {
           $scope.get_data(_segment+1,$scope.query_id);
-        }
+      }
 
-      });
-    };
+});
+};
 
-    $scope.populate_modal = function(request) {
-      $scope.inspector = angular.toJson(JSON.parse(request.toString()),true);
-    };
 
-    $scope.without_kibana = function (row) {
-      var _c = _.clone(row);
-      delete _c.kibana;
-      return _c;
-    };
+$scope.populate_modal = function(request) {
+  $scope.inspector = angular.toJson(JSON.parse(request.toString()),true);
+};
 
-    $scope.set_refresh = function (state) {
-      $scope.refresh = state;
-    };
+$scope.without_kibana = function (row) {
+  var _c = _.clone(row);
+  delete _c.kibana;
+  return _c;
+};
 
-    $scope.close_edit = function() {
-      if($scope.refresh) {
-        $scope.get_data();
-      }
-      $scope.columns = [];
-      _.each($scope.panel.fields,function(field) {
-        $scope.columns[field] = true;
-      });
-      $scope.refresh =  false;
-    };
+$scope.set_refresh = function (state) {
+  $scope.refresh = state;
+};
 
-    $scope.locate = function(obj, path) {
-      path = path.split('.');
-      var arrayPattern = /(.+)\[(\d+)\]/;
-      for (var i = 0; i < path.length; i++) {
-        var match = arrayPattern.exec(path[i]);
-        if (match) {
-          obj = obj[match[1]][parseInt(match[2],10)];
-        } else {
-          obj = obj[path[i]];
-        }
-      }
-      return obj;
-    };
-    $scope.showAdvancedContextMenu = function(event, forceTF){
-      if(forceTF !== undefined){
-        event.kibana['showAdvancedContext'] = forceTF;
-      } else {
-        event.kibana['showAdvancedContext'] = !event.kibana['showAdvancedContext'];
-      }
-    };
+$scope.close_edit = function() {
+  if ($scope.panel.overflow === 'table-nopagination'){
+    $scope.panel.pages = 1;
+    $scope.get_data();
+  }
+  if($scope.refresh) {
+    $scope.get_data();
+  }
+  $scope.columns = [];
+  _.each($scope.panel.fields,function(field) {
+    $scope.columns[field] = true;
+  });
+  $scope.refresh =  false;
+};
 
-    $scope.toggleContextFilter = function(event, filter, key){
-      event.kibana['contextFilters'][filter] = event.kibana['contextFilters'][filter] || {};
-      event.kibana['contextFilters'][filter][key] = !event.kibana['contextFilters'][filter][key];
-    };
+$scope.locate = function(obj, path) {
+  path = path.split('.');
+  var arrayPattern = /(.+)\[(\d+)\]/;
+  for (var i = 0; i < path.length; i++) {
+    var match = arrayPattern.exec(path[i]);
+    if (match) {
+      obj = obj[match[1]][parseInt(match[2],10)];
+    } else {
+      obj = obj[path[i]];
+    }
+  }
+  return obj;
+};
 
-    $scope.getContext = function(event, forceRefresh) {
-      $scope.setEventContextDefaults(event);
-      if(forceRefresh){
-          event.kibana.contextLoaded = false;
-      }
-      if(!event.kibana.contextLoaded) {
-        if(!!event.kibana['contextFilters'] && !!event.kibana['contextFilters']['sort'] ) {
-          var request = $scope.ejs.Request().indices( event._index );
-          var andFilters = [];
-          if(!!event.kibana['contextFilters']['sort'] &&
-               event.kibana['contextFilters']['sort'] === $scope.panel.timeField &&
-               event.kibana['contextFilters']['timeVariance'] >= 0) {
-            var eventTime = new Date( event._source[$scope.panel.timeField] );
-            var toDate = new Date( eventTime );
-            toDate.setSeconds( eventTime.getSeconds() + event.kibana['contextFilters']['timeVariance'] );
-            var fromDate = new Date( eventTime );
-            fromDate.setSeconds( eventTime.getSeconds() - event.kibana['contextFilters']['timeVariance'] );
-            var rangeQuery = ejs.RangeQuery( $scope.panel.timeField );
-            rangeQuery.lt( toDate.toISOString() );
-            rangeQuery.gt( fromDate.toISOString() );
-            andFilters.push( rangeQuery );
-          }
-          for ( var filterKey in event.kibana['contextFilters']['match'] ) {
-            if (event._source[filterKey] !== undefined && event.kibana['contextFilters']['match'][filterKey]) {
-              andFilters.push( ejs.BoolQuery().must( ejs.TermQuery( filterKey, event._source[filterKey] ) ) );
-            }
-          }
-          request = request.filter( ejs.AndFilter( _.map(andFilters, function(filter) { return ejs.QueryFilter(filter); })));
-          request.sort( event.kibana['contextFilters']['sort'], event.kibana['contextFilters']['sortDirection'] )
-            .size( parseInt( event.kibana['contextFilters']['maxReturnResults'] ) )
-            .doSearch().then( function( results ) {
-            event.kibana.contextLoaded = true;
-            var context = results.hits.hits;
-            var eventIndex = _.findIndex(context, function(hit){
-              return hit._id === event._id;
-            });
-            if (eventIndex === -1){
-              event.kibana.postContext = [];
-              event.kibana.preContext = [];
-              event.kibana['contextError'] = true;
-              event.kibana['contextErrorText'] = "Unable to find context.  Try increasing the Max Context Lookup Results.";
-              $scope.showAdvancedContextMenu( event, true );
-              return;
-            }
-            event.kibana['contextError'] = false;
-            var preContextEndIndex = eventIndex + event.kibana['contextFilters']['displayEvents']['to'];
-            if( preContextEndIndex >= context.length ) {
-              preContextEndIndex = context.length - 1;
-            }
-            var postContextStartIndex = eventIndex - event.kibana['contextFilters']['displayEvents']['from'];
-            if( postContextStartIndex < 0 ) {
-              postContextStartIndex = 0;
-            }
-            event.kibana.postContext = context.slice( postContextStartIndex, eventIndex );
-            event.kibana.preContext = context.slice( eventIndex + 1, preContextEndIndex + 1 );
-          });
-        } else {
-          $scope.showAdvancedContextMenu( event );
-        }
-      }
-    };
-      
-    $scope.setEventContextDefaults = function (event) {
-      event.kibana['contextFilters'] = event.kibana['contextFilters'] || {};
-      if(event.kibana['contextFilters']['filters'] === undefined){
-        event.kibana['contextFilters']['filters'] = [];
-        for( var key in event._source ){
-          if( event._source.hasOwnProperty(key) ){
-            event.kibana['contextFilters']['filters'].push(key);
-          }
-        }
-      }
-      if(!event.kibana['contextFilters']['sort']){
-        event.kibana['contextFilters']['sort'] = $scope.panel.timeField || '';
-      }
-      if(event.kibana['contextFilters']['timeVariance'] === undefined){
-        event.kibana['contextFilters']['timeVariance'] = 30;
-      }
-      if(!event.kibana['contextFilters']['sortDirection']){
-        event.kibana['contextFilters']['sortDirection'] = 'asc';
-      }
-      if(event.kibana['contextFilters']['displayEvents'] === undefined){
-        event.kibana['contextFilters']['displayEvents'] = {};
-        event.kibana['contextFilters']['displayEvents']['from'] =
-          event.kibana['contextFilters']['displayEvents']['to'] = 10;
-      }
-      if(!event.kibana['contextFilters']['match']){
-        event.kibana['contextFilters']['match'] = {}
-        _.each($scope.panel.contextMatchFields || [], function(field){
-          if(event._source.hasOwnProperty(field)){
-            event.kibana['contextFilters']['match'][field] = true;
-          }
-        });
-      }
-      if(event.kibana['contextFilters']['maxReturnResults'] === undefined){
-        event.kibana['contextFilters']['maxReturnResults'] = 100;
-      }
+$scope.findNext = function() {
+  $scope.resetFind();
+  var searchText = document.getElementById("findTextbox").value;
+  $("#eventTable .ng-scope").each(function(){
+    $(this).replaceText(new RegExp(searchText, "ig"),"<span class='findResult'>"+searchText+"</span>");
+  });
+};
+
+$scope.resetFind = function() {
+  $("#eventTable .findResult").each(function(){
+    var t = $(this).text();
+    $(this).replaceWith(t);
+  });
+};
+
+$scope.setFind = function(){
+  document.getElementById("findTextbox").addEventListener("keypress",function(key){
+    var code = key.which || key.keyCode;
+    if (code === 13){
+      $scope.findNext();
     }
   });
+};
+$scope.styleName = function(string){
+  return string.replace(/_/g, ' ').replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});  
+};
+
+
+});
 
   // This also escapes some xml sequences
   module.filter('tableHighlight', function() {
     return function(text) {
       if (!_.isUndefined(text) && !_.isNull(text) && text.toString().length > 0) {
         return text.toString().
-          replace(/&/g, '&amp;').
-          replace(/</g, '&lt;').
-          replace(/>/g, '&gt;').
-          replace(/\r?\n/g, '<br/>').
-          replace(/@start-highlight@/g, '<code class="highlight">').
-          replace(/@end-highlight@/g, '</code>');
+        replace(/&/g, '&amp;').
+        replace(/</g, '&lt;').
+        replace(/>/g, '&gt;').
+        replace(/\r?\n/g, '<br/>').
+        replace(/@start-highlight@/g, '<code class="highlight">').
+        replace(/@end-highlight@/g, '</code>');
       }
       return '';
     };
@@ -643,3 +622,26 @@ function (angular, app, _, kbn, moment) {
   });
 
 });
+$.fn.replaceText = function( search, replace, text_only ) {
+  return this.each(function(){
+    var node = this.firstChild,
+    val, new_val, remove = [];
+    if ( node ) {
+      do {
+        if ( node.nodeType === 3 ) {
+          val = node.nodeValue;
+          new_val = val.replace( search, replace );
+          if ( new_val !== val ) {
+            if ( !text_only && /</.test( new_val ) ) {
+              $(node).before( new_val );
+              remove.push( node );
+            } else {
+              node.nodeValue = new_val;
+            }
+          }
+        }
+      } while ( node = node.nextSibling );
+    }
+    remove.length && $(remove).remove();
+  });
+};

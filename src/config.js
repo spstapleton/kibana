@@ -41,7 +41,7 @@ function (Settings) {
      *
      * default_route: '/dashboard/elasticsearch/WebLogs',
      */
-    default_route     : '/dashboard/file/default.json',
+    default_route     : '/dashboard/file/ezlogger.json',
 
     /** @scratch /configuration/config.js/5
      *
@@ -52,6 +52,15 @@ function (Settings) {
      */
     kibana_index: "kibana-int",
 
+    /** @scratch /configuration/config.js/5
+     *
+     * ==== [logstash-]YYYY.MM.DD
+     *
+     * The default search index pattern to use.
+     * 
+     */
+    default_search_index: "[logstash-]YYYY.MM.DD",
+    
     /** @scratch /configuration/config.js/5
      *
      * ==== panel_name
