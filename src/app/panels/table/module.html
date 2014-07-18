@@ -174,7 +174,7 @@
                     <a class="link" ng-class="{'strong':event.kibana.view == 'raw'}" ng-click="event.kibana.view = 'raw'">Raw</a> /
                     <a class="link" ng-class="{'strong':event.kibana.view == 'context'}" ng-click="event.kibana.view = 'context';getContext(event);">Context</a>
                     <i class="link pull-right icon-chevron-up" ng-click="toggle_details(event)"></i>
-                    <a class="link pull-right" ng-switch-when="context" ng-click="showAdvancedContextMenu(event)">Show advanced context options</a>
+                    <a class="link pull-right" ng-switch-when="context" ng-click="showAdvancedContextMenu(event)">Toggle advanced context options</a>
                   </span>
                 </div>
                 <div>
@@ -213,7 +213,7 @@
                               </div>
                           </div>
                           <div class="pull-left">
-                              <div class="clearfix" ng-if="event.kibana['contextFilters']['sort'] === '@timestamp'">
+                              <div class="clearfix" ng-if="event.kibana['contextFilters']['sort'] === panel.timeField">
                                   <div class="pull-left" style="width:8em;">Time Variance*:</div><div class="pull-left"><input type="number" ng-model="event.kibana['contextFilters']['timeVariance']" style="width:5em"/></div>
                               </div>
                           </div>
@@ -222,9 +222,9 @@
                     </div>
                       <div ng-if="event.kibana['contextError']" style="color: #ff0000">{{event.kibana['contextErrorText']}}</div>
                       <div>*Notes:</div>
-                      <div>Sort Filter: If not using '@timestamp', context may take longer to run.</div>
+                      <div>Sort Filter: If not using defaulted time field, context may take longer to run.</div>
                       <div>Max Context Lookup Results: Increasing this value may cause context lookup to take longer to run.</div>
-                      <div ng-if="event.kibana['contextFilters']['sort'] === '@timestamp'">Time Variance: the time in seconds plus or minus the current event to search for context</div>
+                      <div ng-if="event.kibana['contextFilters']['sort'] === panel.timeField">Time Variance: the time in seconds plus or minus the current event to search for context</div>
                   </div>
                     </div>
                 </div>
@@ -250,7 +250,7 @@
                 <pre bo-html="without_kibana(event)|tableJson:1" ng-switch-when="raw"></pre>
                 <div ng-switch-when="context">
                     <div ng-show="!!event.kibana.contextLoaded">
-                        <h3>Context</h3>
+                        <span class="panel-text panel-title">Context</span>
                         <table class="table-hover table table-condensed" style="border: 1px solid #666" ng-style="panel.style">
                             <tbody>
                                 <tr ng-repeat="msg in event.kibana.postContext" ng-class-odd="'odd'">
@@ -277,7 +277,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div ng-show="!event.kibana.contextLoaded"><h3>Loading Context</h3></div>
+                    <div ng-show="!event.kibana.contextLoaded"><span class="panel-text panel-title">Loading Context</span></div>
                 </div>
               </td>
             </tr>
