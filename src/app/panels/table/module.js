@@ -731,7 +731,11 @@ $scope.styleName = function(string){
       return moment(event.sort[1]).format("YYYY-MM-DDTHH:mm:ss.SSSZ");
     };
   });
-
+  module.filter('contextLocalTime', function(){
+    return function(text) {
+      return moment(text).format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+    };
+  });
 });
 $.fn.replaceText = function( search, replace, text_only ) {
   return this.each(function(){

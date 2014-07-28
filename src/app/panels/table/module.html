@@ -295,7 +295,7 @@
                                         <td ng-if="panel.fields.length<1" bo-text="msg._source|stringify|tableTruncate:panel.trimFactor:1"></td>
                                         <td ng-show="panel.fields.length>0" ng-repeat="field in panel.fields">
                                             <span ng-if="!panel.localTime || panel.timeField != field" bo-html="(msg._source[field]) |tableHighlight | tableTruncate:panel.trimFactor:panel.fields.length" class="table-field-value">'FOOOO'</span>
-                                            <span ng-if="panel.localTime && panel.timeField == field" ng-bind-html="msg.sort[1]|tableLocalTime:event" class="table-field-value">fooooooooooo</span>
+                                            <span ng-if="panel.localTime && panel.timeField == field" ng-bind-html="msg._source[field]|contextLocalTime" class="table-field-value"></span>
                                         </td>
                                     </tr>
                                     <tr class="table-event-highlight">
@@ -309,7 +309,7 @@
                                         <td ng-if="panel.fields.length<1" bo-text="msg._source|stringify|tableTruncate:panel.trimFactor:1"></td>
                                         <td ng-show="panel.fields.length>0" ng-repeat="field in panel.fields">
                                             <span ng-if="!panel.localTime || panel.timeField != field" bo-html="(msg._source[field]) |tableHighlight | tableTruncate:panel.trimFactor:panel.fields.length" class="table-field-value"></span>
-                                            <span ng-if="panel.localTime && panel.timeField == field" ng-bind-html="msg.sort[1]|tableLocalTime:event" class="table-field-value"></span>
+                                            <span ng-if="panel.localTime && panel.timeField == field" ng-bind-html="msg._source[field]|contextLocalTime" class="table-field-value"></span>
                                         </td>
                                     </tr>
                                     </tbody>
